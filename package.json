@@ -1,6 +1,6 @@
 {
   "name": "day-special-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "Day Special — server Node http + node:sqlite, zero dipendenze. Planner matrimonio (2 utenti), sync self-hosted (ex Supabase).",

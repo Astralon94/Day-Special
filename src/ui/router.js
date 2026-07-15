@@ -7,10 +7,11 @@ import * as fornitori from './views/fornitori.js';
 import * as programma from './views/programma.js';
 import * as tavoli from './views/tavoli.js';
 import * as checklist from './views/checklist.js';
+import * as impostazioni from './views/impostazioni.js';
 
 const VIEWS = {
   '': home,
-  invitati, budget, fornitori, programma, tavoli, checklist,
+  invitati, budget, fornitori, programma, tavoli, checklist, impostazioni,
 };
 
 let currentUnmount = null;

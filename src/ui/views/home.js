@@ -113,6 +113,12 @@ export const html = `
     <div class="card-desc">Tutte le attività ordinate per fase temporale, dai 12 mesi prima al dopo-nozze. Già precompilata e con aggiunta, modifica ed eliminazione libere.</div>
     <div class="card-stat" id="stat-checklist">—</div>
   </a>
+  <a class="section-card" href="#/impostazioni">
+    <div class="card-icon">⚙️</div>
+    <div class="card-title">Impostazioni</div>
+    <div class="card-desc">Versione dell'app e aggiornamento software.</div>
+    <div class="card-stat" id="stat-impostazioni">—</div>
+  </a>
 </div>
 
 <footer>
@@ -225,7 +231,20 @@ export function mount(root) {
     $('#dash').innerHTML = cards.join('');
   }
 
+  async function loadUpdateStat() {
+    const el = $('#stat-impostazioni');
+    try {
+      const res = await fetch('/api/updates');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const s = await res.json();
+      el.textContent = s.disponibile ? `🔔 Aggiornamento v${s.ultima} disponibile` : `v${s.corrente} · aggiornato`;
+    } catch (e) {
+      el.textContent = 'v? · stato non disponibile';
+    }
+  }
+
   renderDashboard();
+  loadUpdateStat();
   const onChange = () => renderDashboard();
   window.addEventListener('ds:change', onChange);
   return () => window.removeEventListener('ds:change', onChange);
