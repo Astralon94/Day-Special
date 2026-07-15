@@ -65,7 +65,6 @@ export const html = `
   <a class="nav-back" href="#/">← Home</a>
   <h1>Day <span>Special</span> — Tavoli</h1>
   <div class="header-actions">
-    <span class="lbl-saved" id="last-saved"></span>
     <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Stampa la disposizione tavoli">🖨 Stampa</button>
     <button class="icon-btn" id="theme-toggle">🌙</button>
   </div>
@@ -113,14 +112,13 @@ export function mount(root) {
 
   let data = { tavoli: [], tableOrder: [] };
 
-  function save() { DS.set('ds_tavoli', data); $('#last-saved').textContent = DS.lastSavedLabel(); }
+  function save() { DS.set('ds_tavoli', data); }
   function load() {
     const d = DS.get('ds_tavoli');
     if (d) data = d;
     if (!data.tavoli) data.tavoli = [];
     if (!data.tableOrder) data.tableOrder = data.tavoli.map(t => t.id);
     cleanupOrphans();
-    $('#last-saved').textContent = DS.lastSavedLabel();
   }
 
   function cleanupOrphans() {

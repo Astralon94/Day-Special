@@ -48,7 +48,6 @@ export const html = `
   <a class="nav-back" href="#/">← Home</a>
   <h1>Day <span>Special</span> — Checklist</h1>
   <div class="header-actions">
-    <span class="lbl-saved" id="last-saved"></span>
     <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Stampa la checklist">🖨 Stampa</button>
     <button class="icon-btn" id="theme-toggle">🌙</button>
   </div>
@@ -255,7 +254,7 @@ export function mount(root) {
   let data = { items: [] };
   let editId = null;
 
-  function save() { DS.set('ds_checklist', data); $('#last-saved').textContent = DS.lastSavedLabel(); }
+  function save() { DS.set('ds_checklist', data); }
   function load() {
     const d = DS.get('ds_checklist');
     if (d) data = d;
@@ -268,7 +267,6 @@ export function mount(root) {
       data.items = DEFAULTS.map(t => ({ ...t, id: uid(), scadenza:'', note:'' }));
       DS.applyRemote('ds_checklist', data, '1970-01-01T00:00:00.000Z');
     }
-    $('#last-saved').textContent = DS.lastSavedLabel();
   }
 
   function updateProgress() {

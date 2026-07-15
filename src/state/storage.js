@@ -9,8 +9,8 @@
  *   ds_programma → { data, eventi, eventOrder }
  *   ds_tavoli    → { tavoli, tableOrder }
  *   ds_checklist → { items }
- *   ds_meta      → { <chiave>: ISO timestamp ultima modifica }  (per la sync)
- *   ds_last_saved → ISO string
+ *   ds_rev       → { <chiave>: ultimo rev noto confermato dal server }  (per
+ *                   il controllo delle modifiche concorrenti in sync.js)
  *   ds_base      → { <chiave>: ultimo stato concordato col server }  (LOCALE,
  *                   non sincronizzato: oracolo per il merge a 3 vie in sync.js)
  *
@@ -18,14 +18,15 @@
  *   remote=false → modifica locale (questa pagina)
  *   remote=true  → modifica arrivata da un'altra tab o dal server (sync.js)
  *
- * Export e import gestiscono l'intero payload in un unico file.
+ * Niente export/import su file: la fonte di verità è il DB del server (backup
+ * automatici lato server, vedi server/db.js).
  */
 import { DOC_KEYS } from '../shared/docKeys.js';
 
 export const DS = (() => {
 
   const KEYS = DOC_KEYS;
-  const META_KEY = 'ds_meta';
+  const REV_KEY = 'ds_rev';
 
   // ── Read / Write singola chiave ──────────────────────────────────────────
   function get(key) {
@@ -33,14 +34,19 @@ export const DS = (() => {
     catch(e) { console.warn('DS.get error', key, e); return null; }
   }
 
-  function getMeta() {
-    try { return JSON.parse(localStorage.getItem(META_KEY)) || {}; }
-    catch(e) { return {}; }
+  // ── Rev noto per chiave: segnale usato dal controllo modifiche concorrenti ─
+  // (chi ha la versione più recente), non un semplice timestamp locale: è
+  // sempre un numero assegnato dal server, mai calcolato dal client.
+  function getRev(key) {
+    try { const all = JSON.parse(localStorage.getItem(REV_KEY)) || {}; return all[key] ?? 0; }
+    catch(e) { return 0; }
   }
-  function _setMeta(key, ts) {
-    const m = getMeta();
-    m[key] = ts;
-    localStorage.setItem(META_KEY, JSON.stringify(m));
+  function setRev(key, rev) {
+    try {
+      const all = JSON.parse(localStorage.getItem(REV_KEY)) || {};
+      all[key] = rev;
+      localStorage.setItem(REV_KEY, JSON.stringify(all));
+    } catch(e) { console.warn('DS.setRev error', key, e); }
   }
 
   // Ripristina una chiave al valore precedente (o la rimuove se non c'era):
@@ -56,20 +62,14 @@ export const DS = (() => {
   }
 
   function set(key, value) {
-    const ts = new Date().toISOString();
-    // Snapshot per il rollback: le tre scritture (valore, meta, last_saved)
-    // devono restare coerenti. Se una fallisce (es. quota superata) ripristiniamo
-    // lo stato precedente invece di lasciare valore e meta disallineati.
+    // Snapshot per il rollback: se la scrittura fallisce (es. quota superata)
+    // ripristiniamo lo stato precedente invece di lasciarlo a metà.
     const pV = localStorage.getItem(key);
-    const pM = localStorage.getItem(META_KEY);
-    const pS = localStorage.getItem('ds_last_saved');
     try {
       localStorage.setItem(key, JSON.stringify(value));
-      _setMeta(key, ts);
-      localStorage.setItem('ds_last_saved', ts);
     } catch(e) {
       console.warn('DS.set error', key, e);
-      _restore(key, pV); _restore(META_KEY, pM); _restore('ds_last_saved', pS);
+      _restore(key, pV);
       _notifyError('Spazio di archiviazione locale pieno: modifica NON salvata.');
       return;
     }
@@ -78,19 +78,16 @@ export const DS = (() => {
 
   /**
    * Applica un valore arrivato dal server (sync.js) SENZA rimetterlo in coda
-   * di push: aggiorna il dato, il timestamp remoto e notifica la pagina.
+   * di push: aggiorna il dato, il rev confermato e notifica la pagina.
    */
-  function applyRemote(key, value, ts) {
+  function applyRemote(key, value, rev) {
     const pV = localStorage.getItem(key);
-    const pM = localStorage.getItem(META_KEY);
-    const pS = localStorage.getItem('ds_last_saved');
     try {
       localStorage.setItem(key, JSON.stringify(value));
-      _setMeta(key, ts);
-      if (!pS || ts > pS) localStorage.setItem('ds_last_saved', ts);
+      setRev(key, rev);
     } catch(e) {
       console.warn('DS.applyRemote error', key, e);
-      _restore(key, pV); _restore(META_KEY, pM); _restore('ds_last_saved', pS);
+      _restore(key, pV);
       _notifyError('Spazio di archiviazione locale pieno: aggiornamento dal cloud NON salvato.');
       return;
     }
@@ -98,18 +95,13 @@ export const DS = (() => {
   }
 
   /**
-   * Allinea il timestamp locale con quello AUTOREVOLE del server dopo un push
-   * riuscito (il DB decide updated_at). Aggiorna solo il meta e ds_last_saved:
-   * NON riscrive il valore e NON emette 'ds:change', quindi non innesca un
-   * nuovo push né un re-render. Serve a far coincidere il confronto
-   * last-write-wins con l'orologio del server (evita ping-pong da clock skew).
+   * Allinea il rev locale con quello AUTOREVOLE del server dopo un push
+   * riuscito. NON riscrive il valore e NON emette 'ds:change', quindi non
+   * innesca un nuovo push né un re-render: serve solo da base per il prossimo
+   * confronto "chi ha la versione più recente" in sync.js.
    */
-  function setServerMeta(key, ts) {
-    try {
-      _setMeta(key, ts);
-      const last = localStorage.getItem('ds_last_saved');
-      if (!last || ts > last) localStorage.setItem('ds_last_saved', ts);
-    } catch(e) { console.warn('DS.setServerMeta error', key, e); }
+  function setServerRev(key, rev) {
+    setRev(key, rev);
   }
 
   // ── Base snapshot per il merge a 3 vie ───────────────────────────────────
@@ -221,8 +213,8 @@ export const DS = (() => {
     window.dispatchEvent(new CustomEvent('ds:change', { detail: { key, remote: !!remote } }));
   }
   // Sync automatica quando un'altra tab/pagina modifica localStorage.
-  // Solo le chiavi DATI (KEYS): evita re-render inutili per ds_last_saved,
-  // ds_theme, ds_meta, ds_base — che non sono contenuti da mostrare.
+  // Solo le chiavi DATI (KEYS): evita re-render inutili per ds_theme, ds_rev,
+  // ds_base — che non sono contenuti da mostrare.
   if (typeof window !== 'undefined') {
     window.addEventListener('storage', e => {
       if (e.key && KEYS.includes(e.key)) {
@@ -231,70 +223,7 @@ export const DS = (() => {
     });
   }
 
-  // ── Timestamp ────────────────────────────────────────────────────────────
-  function lastSaved() {
-    return localStorage.getItem('ds_last_saved') || null;
-  }
-  function lastSavedLabel() {
-    const iso = lastSaved();
-    if (!iso) return '';
-    const d = new Date(iso);
-    return 'Ultima modifica: ' + d.toLocaleDateString('it-IT') + ' ' + d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-  }
-
-  // ── Export tutto ─────────────────────────────────────────────────────────
-  function _buildPayload() {
-    const payload = { version: 2, exportedAt: new Date().toISOString() };
-    KEYS.forEach(k => { const v = get(k); if (v !== null) payload[k] = v; });
-    return payload;
-  }
-  function _hasData() {
-    return KEYS.some(k => get(k) !== null);
-  }
-  function _download(payload, prefix) {
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = (prefix || 'day-special-') + new Date().toISOString().slice(0, 10) + '.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-  function exportAll() {
-    _download(_buildPayload());
-  }
-
-  // ── Import tutto ─────────────────────────────────────────────────────────
-  function importAll(file, onSuccess, onError) {
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const payload = JSON.parse(ev.target.result);
-        if (!payload.version) throw new Error('Formato non riconosciuto');
-        // Validazione di schema: ogni sezione dati presente deve essere un
-        // oggetto valido. Un file malformato ma "versionato" verrebbe altrimenti
-        // persistito ciecamente, rompendo il rendering delle pagine.
-        KEYS.forEach(k => {
-          if (payload[k] === undefined) return;
-          if (typeof payload[k] !== 'object' || payload[k] === null) {
-            throw new Error('Dati non validi per la sezione ' + k);
-          }
-        });
-        // Backup di sicurezza dello stato attuale PRIMA di sovrascrivere: un
-        // import errato o più vecchio cancellerebbe in modo definitivo i dati
-        // locali (e li propagherebbe al cloud via last-write-wins).
-        if (_hasData()) _download(_buildPayload(), 'day-special-backup-pre-import-');
-        KEYS.forEach(k => { if (payload[k] !== undefined) set(k, payload[k]); });
-        localStorage.setItem('ds_last_saved', payload.exportedAt || new Date().toISOString());
-        if (onSuccess) onSuccess(payload);
-      } catch(e) {
-        if (onError) onError(e);
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  return { get, set, applyRemote, setServerMeta, getBase, setBase, merge3, deepEqual, getMeta, lastSaved, lastSavedLabel, exportAll, importAll, KEYS };
+  return { get, set, applyRemote, setServerRev, getBase, setBase, merge3, deepEqual, getRev, setRev, KEYS };
 })();
 
 // Retro-compatibilità: le view portano ancora `onclick="..."` che si aspettano

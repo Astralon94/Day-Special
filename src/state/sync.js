@@ -24,21 +24,27 @@ export const Sync = (() => {
   let status = 'connecting'; // connecting | synced | syncing | offline | error
   const MAX_PUSH_RETRIES = 3;
 
+  // Spia di salvataggio: riflette lo stato REALE confermato dal server (non un
+  // ottimistico "salvato" mostrato subito dopo la digitazione), come nelle
+  // Zen-Apps. `syncing`/`connecting` = c'è almeno una scrittura non ancora
+  // confermata; `synced` = tutto confermato; `error`/`offline` = l'ultimo
+  // tentativo non è riuscito (dati comunque al sicuro in locale).
   const STATUS_UI = {
-    connecting: ['🔄', 'Connessione al server...'],
-    syncing:    ['🔄', 'Sincronizzazione in corso...'],
-    synced:     ['☁️', 'Sincronizzato'],
-    offline:    ['📴', 'Offline: le modifiche verranno sincronizzate alla riconnessione'],
-    error:      ['⚠️', 'Errore di sincronizzazione: dati salvati solo in locale'],
+    connecting: { c: 'var(--muted)',   dot: '◍', t: 'Connessione al server…' },
+    syncing:    { c: 'var(--gold-txt)', dot: '◍', t: 'Salvataggio…' },
+    synced:     { c: 'var(--success)', dot: '●', t: 'Salvato' },
+    offline:    { c: 'var(--muted)',   dot: '📴', t: 'Offline — verrà salvato alla riconnessione' },
+    error:      { c: 'var(--danger)',  dot: '▲', t: 'Non salvato — nuovo tentativo in corso' },
   };
 
   function setStatus(s) {
     status = s;
     const el = document.getElementById('sync-status');
     if (!el) return;
-    const [icon, title] = STATUS_UI[s] || ['', ''];
-    el.textContent = icon;
-    el.title = title;
+    const m = STATUS_UI[s] || STATUS_UI.connecting;
+    el.style.color = m.c;
+    el.title = m.t;
+    el.innerHTML = `${m.dot} <span class="sb-txt">${m.t}</span>`;
   }
 
   // Inserisce l'indicatore di stato nell'header della vista corrente (chiamata
@@ -48,7 +54,7 @@ export const Sync = (() => {
     if (!actions || document.getElementById('sync-status')) return;
     const span = document.createElement('span');
     span.id = 'sync-status';
-    span.style.cssText = 'font-size:1rem;cursor:default';
+    span.className = 'save-badge';
     actions.insertBefore(span, actions.firstChild);
     setStatus(status);
   }
@@ -71,9 +77,9 @@ export const Sync = (() => {
         body: JSON.stringify({ value }),
       });
       if (!res.ok) throw new Error('HTTP ' + res.status);
-      const { updated_at } = await res.json();
-      // Allinea il meta locale al timestamp autorevole restituito dal server.
-      if (updated_at) DS.setServerMeta(key, updated_at);
+      const { rev } = await res.json();
+      // Allinea il rev locale a quello autorevole restituito dal server.
+      if (rev != null) DS.setServerRev(key, rev);
       // Ciò che abbiamo appena inviato è ora lo stato "concordato" col server:
       // diventa la base per i futuri merge a 3 vie.
       DS.setBase(key, value);
@@ -90,29 +96,34 @@ export const Sync = (() => {
   }
 
   // ── Riconciliazione locale ↔ remoto con merge a 3 vie ────────────────────
+  // Il "chi vince" tra campi scalari discordi è deciso dal `rev` (contatore
+  // monotòno assegnato dal server), non dall'orologio del dispositivo: stesso
+  // segnale di controllo delle modifiche concorrenti usato dalle Zen-Apps,
+  // applicato per documento invece che con un rifiuto/409 — qui il contenuto
+  // si fonde sempre in automatico (merge3), non si chiede mai all'utente di
+  // scegliere.
   // Ritorna true se il dato LOCALE è cambiato (per decidere il toast/re-render).
-  function reconcileRemote(key, remoteValue, remoteTsMs) {
+  function reconcileRemote(key, remoteValue, remoteRev) {
     const local = DS.get(key);
-    const remoteIso = new Date(remoteTsMs).toISOString();
 
     if (local === null) {
-      DS.applyRemote(key, remoteValue, remoteIso);
+      DS.applyRemote(key, remoteValue, remoteRev);
       DS.setBase(key, remoteValue);
       return true;
     }
 
     if (DS.deepEqual(remoteValue, local)) {
       DS.setBase(key, local);
+      DS.setRev(key, remoteRev);
       return false;
     }
 
     const base = DS.getBase(key);
-    const localTs = DS.getMeta()[key] ? Date.parse(DS.getMeta()[key]) : 0;
-    const preferRemote = remoteTsMs > localTs;
+    const preferRemote = remoteRev > DS.getRev(key);
 
     if (base === null) {
       if (preferRemote) {
-        DS.applyRemote(key, remoteValue, remoteIso);
+        DS.applyRemote(key, remoteValue, remoteRev);
         DS.setBase(key, remoteValue);
         return true;
       }
@@ -125,7 +136,7 @@ export const Sync = (() => {
     const differsFromRemote = !DS.deepEqual(merged, remoteValue);
 
     if (changedLocally && !differsFromRemote) {
-      DS.applyRemote(key, merged, remoteIso);
+      DS.applyRemote(key, merged, remoteRev);
       DS.setBase(key, merged);
       return true;
     }
@@ -138,6 +149,7 @@ export const Sync = (() => {
       return false;
     }
     DS.setBase(key, merged);
+    DS.setRev(key, remoteRev);
     return false;
   }
 
@@ -146,14 +158,14 @@ export const Sync = (() => {
     setStatus('syncing');
     const res = await fetch('/api/data');
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    const remote = await res.json(); // { [key]: { value, updated_at } }
+    const remote = await res.json(); // { [key]: { value, updated_at, rev } }
 
     for (const key of DS.KEYS) {
       const r = remote[key];
       const local = DS.get(key);
       if (!r && local === null) continue;
       if (!r) { await pushKey(key); continue; }
-      reconcileRemote(key, r.value, Date.parse(r.updated_at));
+      reconcileRemote(key, r.value, r.rev);
     }
     setStatus('synced');
   }
@@ -166,7 +178,7 @@ export const Sync = (() => {
       let r;
       try { r = JSON.parse(ev.data); } catch { return; }
       if (!r || !DS.KEYS.includes(r.key)) return;
-      if (reconcileRemote(r.key, r.value, Date.parse(r.updated_at))) {
+      if (reconcileRemote(r.key, r.value, r.rev)) {
         App.toast('☁️ Dati aggiornati dall\'altro dispositivo');
       }
     });

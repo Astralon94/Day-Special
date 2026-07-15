@@ -149,7 +149,6 @@ export const html = `
   <a class="nav-back" href="#/">← Home</a>
   <h1>Day <span>Special</span> — Invitati</h1>
   <div class="header-actions">
-    <span class="lbl-saved" id="last-saved"></span>
     <button class="btn btn-ghost btn-sm" onclick="exportCSV()" title="Esporta la lista invitati in CSV">⬇ CSV</button>
     <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Stampa la lista invitati">🖨 Stampa</button>
     <button class="icon-btn" id="theme-toggle">🌙</button>
@@ -356,7 +355,6 @@ export function mount(root) {
   function save() {
     DS.set('ds_invitati', data);
     DS.set('ds_prices', prices);
-    updateLastSavedLabel();
   }
   function load() {
     const d = DS.get('ds_invitati');
@@ -381,11 +379,6 @@ export function mount(root) {
         });
       });
     });
-    updateLastSavedLabel();
-  }
-  function updateLastSavedLabel() {
-    const el = $('#last-saved');
-    if (el) el.textContent = DS.lastSavedLabel();
   }
 
   function findGroup(sec, gid) {

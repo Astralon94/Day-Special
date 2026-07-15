@@ -55,8 +55,8 @@ const readBody = (req) => new Promise((resolve) => {
 
 // ---- Realtime (Server-Sent Events): sostituto locale di Supabase Realtime ----
 const sseClients = new Set();
-function broadcast(key, value, updated_at) {
-  const payload = `event: change\ndata: ${JSON.stringify({ key, value, updated_at })}\n\n`;
+function broadcast(key, value, updated_at, rev) {
+  const payload = `event: change\ndata: ${JSON.stringify({ key, value, updated_at, rev })}\n\n`;
   for (const res of sseClients) { try { res.write(payload); } catch {} }
 }
 
@@ -82,9 +82,9 @@ async function api(req, res, url) {
       return json(res, 400, { error: 'Body non valido: atteso { value }' });
     }
     try {
-      const updated_at = put(id, b.value);
-      broadcast(id, b.value, updated_at);
-      return json(res, 200, { updated_at });
+      const { updated_at, rev } = put(id, b.value);
+      broadcast(id, b.value, updated_at, rev);
+      return json(res, 200, { updated_at, rev });
     } catch (e) { return json(res, 400, { error: String(e.message || e) }); }
   }
 

@@ -62,11 +62,7 @@ export const html = `
     <div class="logo">Day <span>Special</span></div>
   </div>
   <div class="header-actions">
-    <span class="lbl-saved" id="last-saved"></span>
-    <button class="btn btn-ghost" id="btn-import" title="Carica un file di salvataggio">📂 Carica</button>
-    <button class="btn btn-primary" id="btn-export" title="Esporta tutti i dati in un file JSON">💾 Salva file</button>
     <button class="icon-btn" id="theme-toggle" title="Tema chiaro/scuro">🌙</button>
-    <input type="file" id="import-input" accept=".json" style="display:none" />
   </div>
 </header>
 
@@ -128,23 +124,6 @@ export const html = `
 
 export function mount(root) {
   const $ = (sel) => root.querySelector(sel);
-
-  function doExport() { DS.exportAll(); }
-  function doImport() { $('#import-input').click(); }
-  function handleImport(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!confirm('Sostituire tutti i dati attuali con quelli del file selezionato?')) { e.target.value = ''; return; }
-    DS.importAll(file,
-      () => {
-        $('#last-saved').textContent = DS.lastSavedLabel();
-        renderDashboard();
-        App.toast('Dati caricati con successo ✓');
-      },
-      (err) => App.toast('Errore nel file: ' + err.message)
-    );
-    e.target.value = '';
-  }
 
   function allGuests() {
     const inv = DS.get('ds_invitati');
@@ -245,11 +224,6 @@ export function mount(root) {
 
     $('#dash').innerHTML = cards.join('');
   }
-
-  $('#last-saved').textContent = DS.lastSavedLabel();
-  $('#btn-import').addEventListener('click', doImport);
-  $('#btn-export').addEventListener('click', doExport);
-  $('#import-input').addEventListener('change', handleImport);
 
   renderDashboard();
   const onChange = () => renderDashboard();

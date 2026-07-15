@@ -16,14 +16,23 @@ db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
 // Modello key-value: ogni riga è un documento JSON opaco (ds_invitati, ds_checklist, ...).
 // Niente collezioni relazionali: la struttura interna dei documenti è affare del client
 // (merge a 3 vie in src/state/storage.js), il server la tratta come blob.
+// `rev` è un contatore monotòno per chiave, incrementato dal server ad ogni
+// scrittura: è il segnale usato per il controllo delle modifiche concorrenti
+// (di chi è la versione più recente) — più robusto di un confronto sugli
+// orologi dei singoli dispositivi. Non blocca le scritture (nessun 409): la
+// fusione dei contenuti resta il merge a 3 vie lato client.
 db.exec(`
   CREATE TABLE IF NOT EXISTS documents (
     key        TEXT PRIMARY KEY,
     value      TEXT NOT NULL,
-    updated_at TEXT NOT NULL
+    updated_at TEXT NOT NULL,
+    rev        INTEGER NOT NULL DEFAULT 1
   );
   CREATE TABLE IF NOT EXISTS meta (k TEXT PRIMARY KEY, v TEXT);
 `);
+// Migrazione additiva per DB creati prima dell'introduzione di `rev`: idempotente,
+// non tocca valori/righe esistenti (default 1 per le righe già presenti).
+try { db.exec('ALTER TABLE documents ADD COLUMN rev INTEGER NOT NULL DEFAULT 1'); } catch {}
 
 const p2 = (n) => String(n).padStart(2, '0');
 function stamp() {

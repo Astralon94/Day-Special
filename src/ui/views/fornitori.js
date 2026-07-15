@@ -27,7 +27,6 @@ export const html = `
   <a class="nav-back" href="#/">← Home</a>
   <h1>Day <span>Special</span> — Fornitori</h1>
   <div class="header-actions">
-    <span class="lbl-saved" id="last-saved"></span>
     <button class="btn btn-ghost btn-sm" onclick="exportCSV()" title="Esporta i fornitori in CSV">⬇ CSV</button>
     <button class="icon-btn" id="theme-toggle">🌙</button>
   </div>
@@ -129,12 +128,11 @@ export function mount(root) {
   let data = { fornitori: [] };
   let editId = null;
 
-  function save() { DS.set('ds_fornitori', data); $('#last-saved').textContent = DS.lastSavedLabel(); }
+  function save() { DS.set('ds_fornitori', data); }
   function load() {
     const d = DS.get('ds_fornitori');
     if (d) data = d;
     if (!data.fornitori) data.fornitori = [];
-    $('#last-saved').textContent = DS.lastSavedLabel();
   }
 
   function updateSummary() {

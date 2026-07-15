@@ -47,7 +47,6 @@ export const html = `
   <a class="nav-back" href="#/">← Home</a>
   <h1>Day <span>Special</span> — Budget</h1>
   <div class="header-actions">
-    <span class="lbl-saved" id="last-saved"></span>
     <button class="btn btn-ghost btn-sm" id="btn-csv" title="Esporta le voci di spesa in CSV">⬇ CSV</button>
     <button class="btn btn-ghost btn-sm" id="btn-print" title="Stampa il budget">🖨 Stampa</button>
     <button class="icon-btn" id="theme-toggle">🌙</button>
@@ -165,13 +164,12 @@ export function mount(root) {
   let budget = { totale: 0, voci: [] };
   let editId = null;
 
-  function save() { DS.set('ds_budget', budget); $('#last-saved').textContent = DS.lastSavedLabel(); }
+  function save() { DS.set('ds_budget', budget); }
   function load() {
     const d = DS.get('ds_budget');
     if (d) budget = d;
     if (!budget.voci) budget.voci = [];
     $('#input-budget-totale').value = budget.totale || '';
-    $('#last-saved').textContent = DS.lastSavedLabel();
   }
 
   function saveBudgetTotale() {

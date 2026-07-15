@@ -46,7 +46,6 @@ export const html = `
   <a class="nav-back" href="#/">← Home</a>
   <h1>Day <span>Special</span> — Programma</h1>
   <div class="header-actions">
-    <span class="lbl-saved" id="last-saved"></span>
     <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Stampa la timeline">🖨 Stampa</button>
     <button class="icon-btn" id="theme-toggle">🌙</button>
   </div>
@@ -102,7 +101,7 @@ export function mount(root) {
   let prog = { data: '', eventi: [], eventOrder: [] };
   let editId = null;
 
-  function save() { DS.set('ds_programma', prog); $('#last-saved').textContent = DS.lastSavedLabel(); }
+  function save() { DS.set('ds_programma', prog); }
   function load() {
     const d = DS.get('ds_programma');
     if (d) prog = d;
@@ -112,7 +111,6 @@ export function mount(root) {
       $('#input-data').value = prog.data;
       updateDataDisplay();
     }
-    $('#last-saved').textContent = DS.lastSavedLabel();
   }
   function saveData() {
     prog.data = $('#input-data').value;

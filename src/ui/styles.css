@@ -94,7 +94,10 @@ header h1 span { color: var(--accent); }
 .nav-back { text-decoration: none; color: var(--muted); font-size: .9rem; white-space: nowrap; transition: color .15s; }
 .nav-back:hover { color: var(--accent); }
 .header-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.lbl-saved { font-size: .78rem; color: var(--muted); }
+/* Spia di salvataggio (iniettata da Sync in ogni header): riflette lo stato
+   confermato dal server, non un "salvato" ottimistico. Il colore lo decide
+   Sync inline (setStatus); qui solo forma e comportamento responsive. */
+.save-badge { font-size: .82rem; font-weight: 600; cursor: default; white-space: nowrap; }
 .icon-btn {
   background: transparent; border: 1px solid var(--border); border-radius: 8px;
   width: 36px; height: 36px; font-size: 1rem; cursor: pointer; color: var(--text);
@@ -335,7 +338,8 @@ td { padding: 10px 14px; font-size: .9rem; vertical-align: middle; }
     content: attr(data-label);
     font-family: inherit;
   }
-  .lbl-saved { flex-basis: auto; padding: 2px 8px 4px; }
+  .save-badge { flex-basis: auto; padding: 2px 8px 4px; }
+  .save-badge .sb-txt { display: none; }  /* su schermi stretti resta solo il pallino */
 
   /* Summary: due colonne invece di tante strette */
   .summary-cards { grid-template-columns: 1fr 1fr; }
