@@ -1,0 +1,27 @@
+# Dipendenze
+node_modules/
+
+# Build output (rigenerato da vite build)
+dist/
+
+# Database locale + backup (dati, non codice — non versionati)
+data/
+
+# Export reali da Supabase (dati sensibili, usati solo per la migrazione locale)
+scripts/data/
+
+# Cache Vite
+.vite/
+*.local
+
+# File d'ambiente locali
+.env
+.env.local
+.env.*.local
+
+# Log
+*.log
+npm-debug.log*
+
+# macOS
+.DS_Store

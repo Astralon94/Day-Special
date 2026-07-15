@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Day Special" />
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#faf7f4" />
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1c1815" />
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+  <link rel="icon" type="image/png" href="./icon-512.png" />
+  <title>Day Special</title>
+  <script type="module" crossorigin>(function(){const t=document.createElement("link").relList;if(t&&t.supports&&t.supports("modulepreload"))return;for(const w of document.querySelectorAll('link[rel="modulepreload"]'))_(w);new MutationObserver(w=>{for(const g of w)if(g.type==="childList")for(const S of g.addedNodes)S.tagName==="LINK"&&S.rel==="modulepreload"&&_(S)}).observe(document,{childList:!0,subtree:!0});function D(w){const g={};return w.integrity&&(g.integrity=w.integrity),w.referrerPolicy&&(g.referrerPolicy=w.referrerPolicy),w.crossOrigin==="use-credentials"?g.credentials="include":w.crossOrigin==="anonymous"?g.credentials="omit":g.credentials="same-origin",g}function _(w){if(w.ep)return;w.ep=!0;const g=D(w);fetch(w.href,g)}})();const Mt=["ds_invitati","ds_prices","ds_budget","ds_fornitori","ds_programma","ds_tavoli","ds_checklist"],E=(()=>{const M=Mt,t="ds_meta";function D(e){try{const i=localStorage.getItem(e);return i?JSON.parse(i):null}catch(i){return console.warn("DS.get error",e,i),null}}function _(){try{return JSON.parse(localStorage.getItem(t))||{}}catch{return{}}}function w(e,i){const l=_();l[e]=i,localStorage.setItem(t,JSON.stringify(l))}function g(e,i){try{i===null?localStorage.removeItem(e):localStorage.setItem(e,i)}catch{}}function S(e){try{typeof window<"u"&&window.App&&window.App.toast&&window.App.toast("⚠️ "+e)}catch{}}function j(e,i){const l=new Date().toISOString(),x=localStorage.getItem(e),b=localStorage.getItem(t),h=localStorage.getItem("ds_last_saved");try{localStorage.setItem(e,JSON.stringify(i)),w(e,l),localStorage.setItem("ds_last_saved",l)}catch($){console.warn("DS.set error",e,$),g(e,x),g(t,b),g("ds_last_saved",h),S("Spazio di archiviazione locale pieno: modifica NON salvata.");return}A(e,!1)}function T(e,i,l){const x=localStorage.getItem(e),b=localStorage.getItem(t),h=localStorage.getItem("ds_last_saved");try{localStorage.setItem(e,JSON.stringify(i)),w(e,l),(!h||l>h)&&localStorage.setItem("ds_last_saved",l)}catch($){console.warn("DS.applyRemote error",e,$),g(e,x),g(t,b),g("ds_last_saved",h),S("Spazio di archiviazione locale pieno: aggiornamento dal cloud NON salvato.");return}A(e,!0)}function B(e,i){try{w(e,i);const l=localStorage.getItem("ds_last_saved");(!l||i>l)&&localStorage.setItem("ds_last_saved",i)}catch(l){console.warn("DS.setServerMeta error",e,l)}}const v="ds_base";function I(e){try{const i=JSON.parse(localStorage.getItem(v))||{};return e in i?i[e]:null}catch{return null}}function k(e,i){try{const l=JSON.parse(localStorage.getItem(v))||{};l[e]=i,localStorage.setItem(v,JSON.stringify(l))}catch(l){console.warn("DS.setBase error",e,l)}}function L(e){if(Array.isArray(e))return e.map(L);if(e&&typeof e=="object"){const i={};return Object.keys(e).sort().forEach(l=>{i[l]=L(e[l])}),i}return e}function y(e,i){return JSON.stringify(L(e))===JSON.stringify(L(i))}const G="id",N={eventOrder:"eventi",tableOrder:"tavoli",groupOrder:"groups"};function f(e){return e&&typeof e=="object"&&!Array.isArray(e)}function F(e){return Array.isArray(e)&&e.every(i=>f(i)&&i[G]!==void 0)}function z(e,i,l,x){if(y(i,l))return i;if(y(i,e))return l;if(y(l,e))return i;if(F(i)&&F(l)&&(i.length||l.length)){const b=Array.isArray(e)?e:[],h=Y=>{const it={};return Y.forEach(ot=>{f(ot)&&ot[G]!==void 0&&(it[ot[G]]=ot)}),it},$=h(i),P=h(l),H=h(b),K=[],Q={},at=Y=>{if(Q[Y])return;Q[Y]=1;const it=Y in $,ot=Y in P,st=Y in H;it&&ot?K.push(z(H[Y],$[Y],P[Y],x)):it&&!ot?st||K.push($[Y]):!it&&ot&&(st||K.push(P[Y]))},W=x?l:i,dt=x?i:l;return W.forEach(Y=>at(Y[G])),dt.forEach(Y=>at(Y[G])),K}if(f(i)&&f(l)){const b=f(e)?e:{},h={},$={};return Object.keys(i).forEach(P=>{$[P]=1}),Object.keys(l).forEach(P=>{$[P]=1}),Object.keys($).forEach(P=>{const H=P in i,K=P in l,Q=P in b;H&&K?h[P]=z(b[P],i[P],l[P],x):H&&!K?Q||(h[P]=i[P]):!H&&K&&(Q||(h[P]=l[P]))}),Object.keys(N).forEach(P=>{const H=N[P];if(Array.isArray(h[P])&&Array.isArray(h[H])){const K=h[H].filter(W=>f(W)).map(W=>W[G]),Q={};K.forEach(W=>{Q[W]=1});const at=h[P].filter(W=>Q[W]);K.forEach(W=>{at.indexOf(W)===-1&&at.push(W)}),h[P]=at}}),h}return x?l:i}function A(e,i){window.dispatchEvent(new CustomEvent("ds:change",{detail:{key:e,remote:!!i}}))}typeof window<"u"&&window.addEventListener("storage",e=>{e.key&&M.includes(e.key)&&A(e.key,!0)});function R(){return localStorage.getItem("ds_last_saved")||null}function q(){const e=R();if(!e)return"";const i=new Date(e);return"Ultima modifica: "+i.toLocaleDateString("it-IT")+" "+i.toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}function U(){const e={version:2,exportedAt:new Date().toISOString()};return M.forEach(i=>{const l=D(i);l!==null&&(e[i]=l)}),e}function C(){return M.some(e=>D(e)!==null)}function n(e,i){const l=new Blob([JSON.stringify(e,null,2)],{type:"application/json"}),x=URL.createObjectURL(l),b=document.createElement("a");b.href=x,b.download=(i||"day-special-")+new Date().toISOString().slice(0,10)+".json",b.click(),URL.revokeObjectURL(x)}function a(){n(U())}function d(e,i,l){const x=new FileReader;x.onload=b=>{try{const h=JSON.parse(b.target.result);if(!h.version)throw new Error("Formato non riconosciuto");M.forEach($=>{if(h[$]!==void 0&&(typeof h[$]!="object"||h[$]===null))throw new Error("Dati non validi per la sezione "+$)}),C()&&n(U(),"day-special-backup-pre-import-"),M.forEach($=>{h[$]!==void 0&&j($,h[$])}),localStorage.setItem("ds_last_saved",h.exportedAt||new Date().toISOString()),i&&i(h)}catch(h){l&&l(h)}},x.readAsText(e)}return{get:D,set:j,applyRemote:T,setServerMeta:B,getBase:I,setBase:k,merge3:z,deepEqual:y,getMeta:_,lastSaved:R,lastSavedLabel:q,exportAll:a,importAll:d,KEYS:M}})();typeof window<"u"&&(window.DS=E);const J=(()=>{const M="ds_theme";function t(){return localStorage.getItem(M)||"light"}function D(k){document.documentElement.dataset.theme=k;const L=document.getElementById("theme-toggle");L&&(L.textContent=k==="dark"?"☀️":"🌙",L.title=k==="dark"?"Passa al tema chiaro":"Passa al tema scuro",L.dataset.label=k==="dark"?"Tema chiaro":"Tema scuro")}function _(){const k=t()==="dark"?"light":"dark";localStorage.setItem(M,k),D(k)}D(t());function w(){const k=document.querySelector("header"),L=k&&k.querySelector(".header-actions");if(!k||!L||k.querySelector(".menu-toggle"))return;const y=document.createElement("button");y.type="button",y.className="menu-toggle",y.textContent="⚙",y.title="Opzioni",y.setAttribute("aria-label","Opzioni"),y.setAttribute("aria-expanded","false"),k.appendChild(y);const G=()=>{L.classList.remove("menu-open"),y.setAttribute("aria-expanded","false")};y.addEventListener("click",N=>{N.stopPropagation();const f=L.classList.toggle("menu-open");y.setAttribute("aria-expanded",f?"true":"false")}),L.addEventListener("click",N=>{N.target.closest("button, a")&&G()}),document.addEventListener("click",N=>{N.target!==y&&!L.contains(N.target)&&G()}),document.addEventListener("keydown",N=>{N.key==="Escape"&&G()})}function g(){D(t());const k=document.getElementById("theme-toggle");k&&k.addEventListener("click",_),w()}function S(){return"_"+Math.random().toString(36).slice(2,9)}function j(k){return String(k??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}function T(k){return"€ "+(k||0).toLocaleString("it-IT",{minimumFractionDigits:2,maximumFractionDigits:2})}let B;function v(k){let L=document.getElementById("toast");L||(L=document.createElement("div"),L.id="toast",document.body.appendChild(L)),L.textContent=k,L.classList.add("show"),clearTimeout(B),B=setTimeout(()=>L.classList.remove("show"),2500)}function I(k,L){const y=";",G=A=>{const R=String(A??"");return/[";\n]/.test(R)?'"'+R.replace(/"/g,'""')+'"':R},N="\uFEFF"+L.map(A=>A.map(G).join(y)).join(`\r
+`),f=new Blob([N],{type:"text/csv;charset=utf-8"}),F=URL.createObjectURL(f),z=document.createElement("a");z.href=F,z.download=k,z.click(),URL.revokeObjectURL(F)}return{toggleTheme:_,initPage:g,uid:S,esc:j,fmtEur:T,toast:v,downloadCSV:I}})();typeof window<"u"&&(window.App=J);const ut=(()=>{let M={},t={},D=null,_="connecting";const w=3,g={connecting:["🔄","Connessione al server..."],syncing:["🔄","Sincronizzazione in corso..."],synced:["☁️","Sincronizzato"],offline:["📴","Offline: le modifiche verranno sincronizzate alla riconnessione"],error:["⚠️","Errore di sincronizzazione: dati salvati solo in locale"]};function S(f){_=f;const F=document.getElementById("sync-status");if(!F)return;const[z,A]=g[f]||["",""];F.textContent=z,F.title=A}function j(){const f=document.querySelector(".header-actions");if(!f||document.getElementById("sync-status"))return;const F=document.createElement("span");F.id="sync-status",F.style.cssText="font-size:1rem;cursor:default",f.insertBefore(F,f.firstChild),S(_)}function T(f){t[f]=w,clearTimeout(M[f]),M[f]=setTimeout(()=>B(f),600)}async function B(f){const F=E.get(f);if(F!==null){S("syncing");try{const z=await fetch("/api/documents/"+f,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({value:F})});if(!z.ok)throw new Error("HTTP "+z.status);const{updated_at:A}=await z.json();A&&E.setServerMeta(f,A),E.setBase(f,F),S("synced")}catch(z){console.warn("Sync push error",f,z),S(navigator.onLine?"error":"offline"),navigator.onLine&&t[f]>0&&(t[f]--,clearTimeout(M[f]),M[f]=setTimeout(()=>B(f),(w-t[f])*2e3))}}}function v(f,F,z){const A=E.get(f),R=new Date(z).toISOString();if(A===null)return E.applyRemote(f,F,R),E.setBase(f,F),!0;if(E.deepEqual(F,A))return E.setBase(f,A),!1;const q=E.getBase(f),U=E.getMeta()[f]?Date.parse(E.getMeta()[f]):0,C=z>U;if(q===null)return C?(E.applyRemote(f,F,R),E.setBase(f,F),!0):(E.set(f,A),!1);const n=E.merge3(q,A,F,C),a=!E.deepEqual(n,A),d=!E.deepEqual(n,F);return a&&!d?(E.applyRemote(f,n,R),E.setBase(f,n),!0):a?(E.set(f,n),!0):d?(E.set(f,n),!1):(E.setBase(f,n),!1)}async function I(){S("syncing");const f=await fetch("/api/data");if(!f.ok)throw new Error("HTTP "+f.status);const F=await f.json();for(const z of E.KEYS){const A=F[z],R=E.get(z);if(!(!A&&R===null)){if(!A){await B(z);continue}v(z,A.value,Date.parse(A.updated_at))}}S("synced")}function k(){D&&(D.close(),D=null),D=new EventSource("/api/stream"),D.addEventListener("change",f=>{let F;try{F=JSON.parse(f.data)}catch{return}!F||!E.KEYS.includes(F.key)||v(F.key,F.value,Date.parse(F.updated_at))&&J.toast("☁️ Dati aggiornati dall'altro dispositivo")}),D.onerror=()=>{navigator.onLine||S("offline")}}async function L(){try{await I(),k()}catch(f){console.warn("Sync error",f),S(navigator.onLine?"error":"offline")}}let y=!1;function G(){y||(y=!0,window.addEventListener("ds:change",f=>{!f.detail.remote&&E.KEYS.includes(f.detail.key)&&T(f.detail.key)}),window.addEventListener("online",()=>L()),window.addEventListener("offline",()=>S("offline")),L())}function N(){j()}return{init:G,onViewMounted:N,get status(){return _}}})();typeof window<"u"&&(window.Sync=ut);const Gt="Day Special – Home",Dt=`
+<style>
+  body { display: flex; flex-direction: column; }
+  .logo { font-family: var(--font-serif); font-size: 1.6rem; font-weight: 700; letter-spacing: .01em; }
+  .logo span { color: var(--accent); }
+  .logo-sub { font-size: .85rem; color: var(--muted); margin-top: 2px; }
+  .hero { text-align: center; padding: 52px 24px 36px; }
+  .hero h2 { font-family: var(--font-serif); font-size: 2.1rem; font-weight: 700; margin-bottom: 10px; }
+  .hero p { color: var(--muted); font-size: 1rem; max-width: 480px; margin: 0 auto; }
+  .countdown {
+    display: inline-flex; align-items: baseline; gap: 8px; margin-top: 18px;
+    background: var(--accent-soft); border: 1px solid var(--accent-line);
+    border-radius: 999px; padding: 8px 22px; animation: fadeUp .4s ease both;
+  }
+  .countdown .num { font-family: var(--font-serif); font-size: 1.6rem; font-weight: 700; color: var(--gold-txt); font-variant-numeric: tabular-nums; }
+  .countdown .txt { font-size: .85rem; color: var(--gold-txt); }
+  .dash { max-width: 960px; margin: 0 auto 36px; padding: 0 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+  .dash-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; animation: fadeUp .35s ease both; }
+  .dash-card .d-lbl { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  .dash-card .d-val { font-size: 1.45rem; font-weight: 700; color: var(--accent); line-height: 1.2; font-variant-numeric: tabular-nums; }
+  .dash-card .d-sub { font-size: .78rem; color: var(--muted); margin-top: 4px; }
+  .dash-bar { height: 6px; background: var(--border-soft); border-radius: 3px; margin-top: 10px; overflow: hidden; }
+  .dash-bar > div { height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s; }
+  .dash-bar > div.over { background: var(--danger); }
+  .sections { max-width: 960px; margin: 0 auto; padding: 0 24px 60px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+  .section-card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 26px 24px 20px; text-decoration: none; color: var(--text);
+    display: flex; flex-direction: column; gap: 10px;
+    transition: box-shadow .18s, border-color .18s, transform .18s;
+    animation: fadeUp .35s ease both;
+  }
+  .section-card:hover { box-shadow: var(--shadow-lg); border-color: var(--accent); transform: translateY(-3px); }
+  .card-icon { font-size: 2.1rem; line-height: 1; }
+  .card-title { font-family: var(--font-serif); font-size: 1.15rem; font-weight: 700; }
+  .card-desc { font-size: .85rem; color: var(--muted); line-height: 1.5; flex: 1; }
+  .card-stat { font-size: .8rem; font-weight: 600; color: var(--accent-dk); background: var(--accent-soft); border: 1px solid var(--accent-line); border-radius: 10px; padding: 3px 12px; width: fit-content; }
+  [data-theme="dark"] .card-stat { color: var(--accent); }
+  footer { margin-top: auto; text-align: center; padding: 20px; font-size: .8rem; color: var(--muted); border-top: 1px solid var(--border); background: var(--surface); }
+  @media (max-width: 600px) {
+    .logo { font-size: 1.4rem; }
+    .hero { padding: 32px 18px 24px; }
+    .hero h2 { font-size: 1.6rem; }
+    .hero p { font-size: .92rem; }
+    .countdown { padding: 8px 16px; margin-top: 14px; }
+    .countdown .num { font-size: 1.3rem; }
+    .dash { padding: 0 14px; gap: 12px; grid-template-columns: 1fr 1fr; }
+    .dash-card { padding: 14px 14px; }
+    .dash-card .d-val { font-size: 1.3rem; }
+    .sections { padding: 0 14px 40px; gap: 14px; grid-template-columns: 1fr; }
+    .section-card { padding: 20px 18px 16px; }
+  }
+</style>
+
+<header>
+  <div>
+    <div class="logo">Day <span>Special</span></div>
+  </div>
+  <div class="header-actions">
+    <span class="lbl-saved" id="last-saved"></span>
+    <button class="btn btn-ghost" id="btn-import" title="Carica un file di salvataggio">📂 Carica</button>
+    <button class="btn btn-primary" id="btn-export" title="Esporta tutti i dati in un file JSON">💾 Salva file</button>
+    <button class="icon-btn" id="theme-toggle" title="Tema chiaro/scuro">🌙</button>
+    <input type="file" id="import-input" accept=".json" style="display:none" />
+  </div>
+</header>
+
+<div class="hero">
+  <h2>Benvenuto nel tuo planner 💍</h2>
+  <div class="countdown" id="countdown" style="display:none">
+    <span class="num" id="cd-num"></span>
+    <span class="txt" id="cd-txt"></span>
+  </div>
+</div>
+
+<div class="dash" id="dash"></div>
+
+<div class="sections">
+  <a class="section-card" href="#/invitati">
+    <div class="card-icon">👥</div>
+    <div class="card-title">Invitati</div>
+    <div class="card-desc">Gestisci la lista degli invitati, i gruppi famiglia, gli stati degli inviti e il costo del menù.</div>
+    <div class="card-stat" id="stat-invitati">—</div>
+  </a>
+  <a class="section-card" href="#/budget">
+    <div class="card-icon">💰</div>
+    <div class="card-title">Budget</div>
+    <div class="card-desc">Tieni traccia delle spese per categoria, lo stato dei pagamenti e il saldo disponibile.</div>
+    <div class="card-stat" id="stat-budget">—</div>
+  </a>
+  <a class="section-card" href="#/fornitori">
+    <div class="card-icon">📋</div>
+    <div class="card-title">Fornitori</div>
+    <div class="card-desc">Gestisci contatti, preventivi e stato del contratto di fotografi, catering, fioristi e altri fornitori.</div>
+    <div class="card-stat" id="stat-fornitori">—</div>
+  </a>
+  <a class="section-card" href="#/programma">
+    <div class="card-icon">🗓️</div>
+    <div class="card-title">Programma</div>
+    <div class="card-desc">Costruisci la timeline della giornata con eventi, orari, luoghi e note. Riordinabile con drag & drop.</div>
+    <div class="card-stat" id="stat-programma">—</div>
+  </a>
+  <a class="section-card" href="#/tavoli">
+    <div class="card-icon">🪑</div>
+    <div class="card-title">Tavoli</div>
+    <div class="card-desc">Crea i tavoli e assegna gli ospiti confermati con drag & drop. Si sincronizza con la lista invitati.</div>
+    <div class="card-stat" id="stat-tavoli">—</div>
+  </a>
+  <a class="section-card" href="#/checklist">
+    <div class="card-icon">✅</div>
+    <div class="card-title">Checklist</div>
+    <div class="card-desc">Tutte le attività ordinate per fase temporale, dai 12 mesi prima al dopo-nozze. Già precompilata e con aggiunta, modifica ed eliminazione libere.</div>
+    <div class="card-stat" id="stat-checklist">—</div>
+  </a>
+</div>
+
+<footer>
+  <div>Day Special</div>
+  <div style="margin-top:4px">Sviluppato con ❤️ da Francesco Maria De Santis</div>
+</footer>
+<div id="toast"></div>
+`;function Bt(M){const t=v=>M.querySelector(v);function D(){E.exportAll()}function _(){t("#import-input").click()}function w(v){const I=v.target.files[0];if(I){if(!confirm("Sostituire tutti i dati attuali con quelli del file selezionato?")){v.target.value="";return}E.importAll(I,()=>{t("#last-saved").textContent=E.lastSavedLabel(),T(),J.toast("Dati caricati con successo ✓")},k=>J.toast("Errore nel file: "+k.message)),v.target.value=""}}function g(){const v=E.get("ds_invitati");if(!v)return[];const I=[];return v.sposi&&v.sposi.guests&&v.sposi.guests.forEach(k=>I.push(k)),["sposo","sposa","comuni"].forEach(k=>{!v[k]||!v[k].groups||v[k].groups.forEach(L=>L.guests.forEach(y=>I.push(y)))}),I}function S(){const v=E.get("ds_programma"),I=t("#countdown");if(!v||!v.data){I.style.display="none";return}const k=new Date;k.setHours(0,0,0,0);const L=new Date(v.data+"T00:00:00"),y=Math.round((L-k)/864e5),G=t("#cd-num"),N=t("#cd-txt"),f=L.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long",year:"numeric"});y>0?(G.textContent=y,N.textContent=(y===1?"giorno":"giorni")+" al matrimonio · "+f):y===0?(G.textContent="🎉",N.textContent="È oggi! Auguri!"):(G.textContent="💞",N.textContent="Sposati il "+f),I.style.display="inline-flex"}function j(v,I,k,L,y){return`<div class="dash-card">
+      <div class="d-lbl">${v}</div>
+      <div class="d-val">${I}</div>
+      ${k?`<div class="d-sub">${k}</div>`:""}
+      ${L!==void 0?`<div class="dash-bar"><div style="width:${Math.min(L,100)}%" class="${y?"over":""}"></div></div>`:""}
+    </div>`}function T(){S();const v=[],I=g(),k=I.filter(z=>!z.formale),L=k.filter(z=>z.status==="confermato").length;I.length?(v.push(j("👥 Invitati",k.length,L+" confermati",k.length?L/k.length*100:0)),t("#stat-invitati").textContent=`${k.length} invitati · ${L} confermati`):t("#stat-invitati").textContent="Inizia da qui";const y=E.get("ds_budget");if(y&&(y.totale||(y.voci||[]).length)){const z=(y.voci||[]).reduce((q,U)=>q+(U.preventivo||0),0),A=(y.voci||[]).reduce((q,U)=>q+(U.pagato||0),0),R=y.totale>0?z/y.totale*100:0;v.push(j("💰 Budget",J.fmtEur(y.totale),J.fmtEur(z)+" preventivato · "+J.fmtEur(A)+" pagato",R,z>y.totale&&y.totale>0)),t("#stat-budget").textContent=`${J.fmtEur(A)} / ${J.fmtEur(y.totale)}`}else t("#stat-budget").textContent="Da impostare";const G=E.get("ds_checklist");if(G&&(G.items||[]).length){const z=G.items.filter(R=>R.stato==="done").length,A=Math.round(z/G.items.length*100);v.push(j("✅ Checklist",A+"%",z+" su "+G.items.length+" completate",A)),t("#stat-checklist").textContent=`${z}/${G.items.length} attività`}else t("#stat-checklist").textContent="Nessuna attività";const N=E.get("ds_tavoli");if(N&&(N.tavoli||[]).length){const z=N.tavoli.reduce((R,q)=>R+(q.posti||0),0),A=N.tavoli.reduce((R,q)=>R+(q.guestIds||[]).length,0);v.push(j("🪑 Tavoli",N.tavoli.length,A+" / "+z+" posti assegnati",z?A/z*100:0)),t("#stat-tavoli").textContent=`${N.tavoli.length} tavoli · ${A} assegnati`}else t("#stat-tavoli").textContent="Nessun tavolo";const f=E.get("ds_fornitori");if(f&&(f.fornitori||[]).length){const z=f.fornitori.filter(A=>A.stato==="contratto"||A.stato==="saldato").length;t("#stat-fornitori").textContent=`${f.fornitori.length} fornitori · ${z} contratti`}else t("#stat-fornitori").textContent="Nessun fornitore";const F=E.get("ds_programma");F&&(F.eventi||[]).length?t("#stat-programma").textContent=`${F.eventi.length} eventi in timeline`:t("#stat-programma").textContent="Timeline vuota",t("#dash").innerHTML=v.join("")}t("#last-saved").textContent=E.lastSavedLabel(),t("#btn-import").addEventListener("click",_),t("#btn-export").addEventListener("click",D),t("#import-input").addEventListener("change",w),T();const B=()=>T();return window.addEventListener("ds:change",B),()=>window.removeEventListener("ds:change",B)}const yt=Object.freeze(Object.defineProperty({__proto__:null,html:Dt,mount:Bt,title:Gt},Symbol.toStringTag,{value:"Module"})),Rt="Invitati – Day Special",jt=`
+<style>
+  .summary { display: flex; flex-direction: column; gap: 14px; margin-bottom: 32px; }
+  .stat-card.cost .val { font-size: 1.4rem; color: var(--accent-dk); }
+  .menu-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 28px; box-shadow: var(--shadow); }
+  .menu-section h2 { font-size: 1rem; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .collapsible { padding: 0; }
+  .collapsible > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; font-size: 1rem; font-weight: 600; padding: 16px 24px; user-select: none; }
+  .collapsible > summary::-webkit-details-marker { display: none; }
+  .collapsible > summary::after { content: '▸'; margin-left: auto; color: var(--muted); transition: transform .2s; }
+  .collapsible[open] > summary::after { transform: rotate(90deg); }
+  .collapsible > summary:hover { color: var(--accent); }
+  .collapsible[open] > summary { border-bottom: 1px solid var(--border); }
+  .collapsible > :not(summary) { padding: 18px 24px; }
+  #summary-card .summary { margin-bottom: 0; }
+  .menu-prices { display: flex; gap: 16px; flex-wrap: wrap; }
+  .price-field { display: flex; flex-direction: column; gap: 4px; }
+  .price-field label { font-size: .8rem; color: var(--muted); font-weight: 500; }
+  .price-field input { width: 130px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: .95rem; background: var(--surface); color: var(--text); }
+  .price-field input:focus { outline: none; border-color: var(--accent); }
+  .section-tabs { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab-btn { padding: 9px 20px; border: 1px solid var(--border); border-radius: 20px; background: var(--surface); cursor: pointer; font-size: .88rem; font-weight: 500; color: var(--muted); transition: all .18s; font-family: inherit; }
+  .tab-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  [data-theme="dark"] .tab-btn.active { color: #1c1815; }
+  .tab-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+  .guest-section { display: none; }
+  .guest-section.active { display: block; }
+  .print-title { display: none; }
+  .toolbar input[type=text] { flex: 1; min-width: 180px; }
+  .form-row input[name=nome] { flex: 1; min-width: 160px; }
+  .groups-area { display: flex; flex-direction: column; gap: 16px; }
+  .family-group { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; animation: fadeUp .3s ease both; }
+  .family-group.is-famiglia { border-left: 3px solid var(--accent-line); }
+  .group-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--border); user-select: none; }
+  .drag-handle { color: var(--muted); font-size: 1rem; cursor: grab; }
+  .drag-handle:active { cursor: grabbing; }
+  .group-collapse { background: none; border: none; cursor: pointer; color: var(--muted); font-size: .85rem; padding: 2px 4px; line-height: 1; flex: none; }
+  .group-collapse:hover { color: var(--accent); }
+  .family-group.collapsed .group-body { display: none; }
+  .group-name-wrap { flex: 1; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .group-name-input { border: none; background: transparent; font-weight: 600; font-size: .95rem; outline: none; border-bottom: 1px dashed var(--accent); color: var(--text); font-family: inherit; }
+  .group-count { font-size: .8rem; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 2px 10px; white-space: nowrap; }
+  .group-body { padding: 8px 12px; }
+  .group-toggle { display: none; background: none; border: 1px solid var(--border); border-radius: 8px; width: 30px; height: 30px; font-size: 1.1rem; line-height: 1; cursor: pointer; color: var(--muted); flex: none; }
+  .group-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .group-actions { display: flex; align-items: center; gap: 6px; }
+  .group-type-badge { font-size: .7rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+  .group-type-badge.famiglia { background: var(--gold-soft); color: var(--gold-txt); }
+  .group-type-badge.generico { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+  .group-type-badge.sposi { background: var(--accent-soft); color: var(--gold-txt); }
+  .capo-name { font-size: .78rem; color: var(--gold-txt); font-weight: 600; white-space: nowrap; }
+  .edit-btn { background: none; border: none; cursor: pointer; font-size: .85rem; opacity: .5; padding: 2px 4px; line-height: 1; transition: opacity .15s; }
+  .edit-btn:hover { opacity: 1; }
+  .guest-list { list-style: none; }
+  .guest-item { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-bottom: 1px solid var(--border-soft); }
+  .guest-item:last-child { border-bottom: none; }
+  .guest-item.dragging { opacity: .4; }
+  .guest-item.formale { background: repeating-linear-gradient(135deg, transparent, transparent 6px, var(--bg) 6px, var(--bg) 12px); }
+  .guest-item.formale .guest-name-input { color: var(--muted); font-style: italic; }
+  .guest-item.capofamiglia { background: var(--gold-soft); }
+  .guest-item.capofamiglia .guest-name-input { font-weight: 700; }
+  .capo-marker { font-size: .9rem; }
+  .flag-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; font-size: .75rem; cursor: pointer; color: var(--muted); white-space: nowrap; transition: all .15s; font-family: inherit; }
+  .flag-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .flag-btn.active { background: var(--accent-soft); border-color: var(--accent-line); color: var(--gold-txt); font-weight: 600; }
+  .crown-btn { background: none; border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; font-size: .8rem; cursor: pointer; opacity: .4; filter: grayscale(1); transition: all .15s; }
+  .crown-btn:hover { opacity: .85; filter: grayscale(0); border-color: var(--accent-line); }
+  .crown-btn.active { opacity: 1; filter: none; background: var(--gold-soft); border-color: var(--accent-line); }
+  .parentela-select { font-size: .8rem; padding: 4px 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--text); font-family: inherit; max-width: 150px; }
+  .group-move-select { font-size: .8rem; padding: 4px 6px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--muted); font-family: inherit; max-width: 150px; cursor: pointer; }
+  .group-move-select:focus { outline: none; border-color: var(--accent); }
+  .parentela-static { font-size: .75rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; background: var(--gold-soft); color: var(--gold-txt); white-space: nowrap; }
+  .guest-drag { color: var(--border); cursor: grab; font-size: .9rem; }
+  .guest-drag:active { cursor: grabbing; }
+  .guest-type-badge { font-size: .7rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+  .badge-adulto  { background: var(--info-soft); color: var(--info); }
+  .badge-bambino { background: var(--success-soft); color: var(--success); }
+  .badge-neonato { background: var(--gold-soft); color: var(--gold-txt); }
+  .tipo-select { font-size: .72rem; padding: 3px 8px; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: inherit; border: 1px solid var(--border); background: var(--surface); }
+  .tipo-select:focus { outline: none; border-color: var(--accent); }
+  .tipo-select.tipo-adulto  { background: var(--info-soft);    color: var(--info);     border-color: var(--info-soft); }
+  .tipo-select.tipo-bambino { background: var(--success-soft); color: var(--success);  border-color: var(--success-soft); }
+  .tipo-select.tipo-neonato { background: var(--gold-soft);    color: var(--gold-txt); border-color: var(--gold-soft); }
+  .menu-select { font-size: .72rem; padding: 3px 8px; border-radius: 10px; font-weight: 600; cursor: pointer; font-family: inherit; border: 1px solid var(--border); background: var(--surface); color: var(--muted); }
+  .menu-select:focus { outline: none; border-color: var(--accent); }
+  .menu-select.menu-carne       { background: var(--warning-soft); color: var(--warning); border-color: var(--warning-soft); }
+  .menu-select.menu-pesce       { background: var(--info-soft);    color: var(--info);    border-color: var(--info-soft); }
+  .menu-select.menu-vegetariano { background: var(--success-soft); color: var(--success); border-color: var(--success-soft); }
+  .menu-select.menu-vegano      { background: var(--teal-soft);    color: var(--teal);    border-color: var(--teal-soft); }
+  .guest-name-input { border: none; background: transparent; font-size: .9rem; outline: none; border-bottom: 1px dashed var(--accent); flex: 1; min-width: 0; color: var(--text); font-family: inherit; }
+  .status-da_invitare { border-color: var(--border); color: var(--muted); }
+  .status-invitato     { border-color: var(--info);    color: var(--info); }
+  .status-confermato   { border-color: var(--success); color: var(--success); }
+  .status-annullato    { border-color: var(--danger);  color: var(--danger); }
+  .guest-main { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .guest-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .guest-toggle { display: none; background: none; border: 1px solid var(--border); border-radius: 8px; width: 30px; height: 30px; font-size: 1.1rem; line-height: 1; cursor: pointer; color: var(--muted); flex: none; }
+  .guest-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  .status-dot { display: none; width: 11px; height: 11px; border-radius: 50%; flex: none; background: var(--muted); }
+  .status-dot.status-da_invitare { background: var(--muted); }
+  .status-dot.status-invitato    { background: var(--info); }
+  .status-dot.status-confermato  { background: var(--success); }
+  .status-dot.status-annullato   { background: var(--danger); }
+  .sposi-block { margin-bottom: 18px; }
+  .sposi-group { border-left: 3px solid var(--accent); }
+  .sposi-group .group-header { background: var(--accent-soft); padding: 8px 12px; }
+  .sposi-group .group-body { padding: 4px 12px 8px; }
+  .sposi-add { display: flex; gap: 8px; padding: 8px 4px 2px; flex-wrap: wrap; }
+  .sposi-add input { flex: 1; min-width: 150px; padding: 7px 11px; border: 1px solid var(--border); border-radius: 8px; font-size: .9rem; background: var(--surface); color: var(--text); font-family: inherit; }
+  .sposi-add input:focus { outline: none; border-color: var(--accent); }
+  .group-add-wrap { padding: 6px 6px 2px; border-top: 1px dashed var(--border-soft); margin-top: 4px; }
+  .group-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .group-add-name { flex: 1; min-width: 150px; padding: 7px 11px; border: 1px solid var(--border); border-radius: 8px; font-size: .9rem; background: var(--surface); color: var(--text); font-family: inherit; }
+  .group-add-name:focus { outline: none; border-color: var(--accent); }
+  .group-add-tipo { padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; font-size: .85rem; background: var(--surface); color: var(--text); font-family: inherit; }
+  .group-add-tipo:focus { outline: none; border-color: var(--accent); }
+  .empty-group { text-align: center; color: var(--muted); font-size: .85rem; padding: 14px; }
+  .drop-target { outline: 2px dashed var(--accent); outline-offset: -2px; }
+  @media (max-width: 600px) {
+    .guest-item { flex-direction: column; align-items: stretch; gap: 0; padding: 10px 8px; }
+    .guest-main { gap: 8px; }
+    .guest-name-input { flex: 1; font-size: 16px; }
+    .guest-drag, .drag-handle { display: none; }
+    .guest-toggle { display: inline-flex; align-items: center; justify-content: center; }
+    .status-dot { display: inline-block; }
+    .guest-actions { display: none; width: 100%; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border-soft); gap: 8px; }
+    .guest-item.expanded .guest-actions { display: flex; }
+    .guest-actions .status-select, .guest-actions .parentela-select { flex: 1; min-width: 130px; }
+    .guest-actions .guest-type-badge { align-self: center; }
+    .group-header { flex-wrap: wrap; gap: 8px; }
+    .group-name-input { font-size: 16px; }
+    .group-toggle { display: inline-flex; align-items: center; justify-content: center; }
+    .group-actions { display: none; width: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border-soft); }
+    .family-group.expanded .group-actions { display: flex; }
+  }
+  @media print {
+    .summary, .menu-section, .section-tabs, .sposi-add, .edit-btn { display: none; }
+    .guest-section { display: block !important; }
+    .print-title { display: block; font-family: var(--font-serif); font-size: 1.2rem; font-weight: 700; margin: 18px 0 10px; }
+    .guest-drag, .drag-handle, .flag-btn:not(.active) { display: none; }
+  }
+</style>
+<header>
+  <a class="nav-back" href="#/">← Home</a>
+  <h1>Day <span>Special</span> — Invitati</h1>
+  <div class="header-actions">
+    <span class="lbl-saved" id="last-saved"></span>
+    <button class="btn btn-ghost btn-sm" onclick="exportCSV()" title="Esporta la lista invitati in CSV">⬇ CSV</button>
+    <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Stampa la lista invitati">🖨 Stampa</button>
+    <button class="icon-btn" id="theme-toggle">🌙</button>
+  </div>
+</header>
+<div class="container container--wide">
+  <details class="collapsible menu-section" id="summary-card">
+    <summary>📊 Riepilogo invitati e costi</summary>
+    <div class="summary" id="summary">
+      <div class="summary-group">
+        <div class="summary-group-title">👥 Totale invitati</div>
+        <div class="summary-cards">
+          <div class="stat-card"><div class="val" id="s-totale">0</div><div class="lbl">Totale</div></div>
+          <div class="stat-card"><div class="val" id="s-adulti">0</div><div class="lbl">Adulti</div></div>
+          <div class="stat-card"><div class="val" id="s-bambini">0</div><div class="lbl">Bambini</div></div>
+          <div class="stat-card"><div class="val" id="s-neonati">0</div><div class="lbl">Neonati</div></div>
+          <div class="stat-card" style="border-left:3px solid var(--accent-line)"><div class="val" style="color:var(--gold-txt)" id="s-formali">0</div><div class="lbl">Formali (esclusi)</div></div>
+        </div>
+      </div>
+      <div class="summary-group">
+        <div class="summary-group-title">📊 Invitati per provenienza</div>
+        <div class="summary-cards">
+          <div class="stat-card"><div class="val" id="s-sec-sposo">0</div><div class="lbl">💍 Sposo</div></div>
+          <div class="stat-card"><div class="val" id="s-sec-sposa">0</div><div class="lbl">👰 Sposa</div></div>
+          <div class="stat-card"><div class="val" id="s-sec-comuni">0</div><div class="lbl">🤝 Comuni</div></div>
+          <div class="stat-card"><div class="val" id="s-sec-sposi">0</div><div class="lbl">💑 Sposi</div></div>
+        </div>
+      </div>
+      <div class="summary-group">
+        <div class="summary-group-title">🍽️ Menù</div>
+        <div class="summary-cards">
+          <div class="stat-card"><div class="val" id="s-menu-carne">0</div><div class="lbl">🥩 Carne</div></div>
+          <div class="stat-card"><div class="val" id="s-menu-pesce">0</div><div class="lbl">🐟 Pesce</div></div>
+          <div class="stat-card"><div class="val" id="s-menu-vegetariano">0</div><div class="lbl">🥗 Vegetariano</div></div>
+          <div class="stat-card"><div class="val" id="s-menu-vegano">0</div><div class="lbl">🌱 Vegano</div></div>
+          <div class="stat-card"><div class="val" id="s-menu-nd">0</div><div class="lbl">Da assegnare</div></div>
+          <div class="stat-card" style="border-left:3px solid var(--accent-line)"><div class="val" style="color:var(--gold-txt)" id="s-celiaci">0</div><div class="lbl">🌾 Celiaci (di cui)</div></div>
+          <div class="stat-card" style="border-left:3px solid var(--accent-line)"><div class="val" style="color:var(--gold-txt)" id="s-lattosio">0</div><div class="lbl">🥛 Senza lattosio (di cui)</div></div>
+        </div>
+      </div>
+      <div class="summary-group">
+        <div class="summary-group-title">📬 Stato inviti</div>
+        <div class="summary-cards">
+          <div class="stat-card"><div class="val" id="s-da_invitare">0</div><div class="lbl">Inviti da inviare</div></div>
+          <div class="stat-card"><div class="val" id="s-invitato">0</div><div class="lbl">Inviti inviati</div></div>
+          <div class="stat-card"><div class="val" id="s-confermato">0</div><div class="lbl">Confermati</div></div>
+          <div class="stat-card"><div class="val" id="s-annullato">0</div><div class="lbl">Annullati</div></div>
+        </div>
+      </div>
+      <div class="summary-group">
+        <div class="summary-group-title">💰 Costi</div>
+        <div class="summary-cards">
+          <div class="stat-card cost"><div class="val" id="s-costo">€ 0,00</div><div class="lbl">Costo stimato</div></div>
+          <div class="stat-card cost"><div class="val" id="s-costo-confermati">€ 0,00</div><div class="lbl">Costo confermati</div></div>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <details class="collapsible menu-section">
+    <summary>🍽️ Prezzo menù per persona</summary>
+    <div class="menu-prices">
+      <div class="price-field"><label>Adulto – base (€)</label><input type="number" id="p-adulto" min="0" step="0.01" placeholder="es. 85.00" /></div>
+      <div class="price-field"><label>Adulto 🥩 Carne (€)</label><input type="number" id="p-adulto-carne" min="0" step="0.01" placeholder="—" /></div>
+      <div class="price-field"><label>Adulto 🐟 Pesce (€)</label><input type="number" id="p-adulto-pesce" min="0" step="0.01" placeholder="—" /></div>
+      <div class="price-field"><label>Adulto 🥗 Vegetariano (€)</label><input type="number" id="p-adulto-vegetariano" min="0" step="0.01" placeholder="—" /></div>
+      <div class="price-field"><label>Adulto 🌱 Vegano (€)</label><input type="number" id="p-adulto-vegano" min="0" step="0.01" placeholder="—" /></div>
+      <div class="price-field"><label>Bambino (€)</label><input type="number" id="p-bambino" min="0" step="0.01" placeholder="es. 40.00" /></div>
+      <div class="price-field"><label>Neonato (€)</label><input type="number" id="p-neonato" min="0" step="0.01" placeholder="es. 0.00" /></div>
+    </div>
+    <p style="font-size:.8rem;color:var(--muted);margin-top:10px">
+      Per gli adulti vale il prezzo della portata scelta; se quella portata è vuota (o il menù non è ancora assegnato) si usa il prezzo <strong>base</strong>.
+    </p>
+  </details>
+
+  <div class="sposi-block"><div class="groups-area" id="groups-sposi"></div></div>
+
+  <div class="section-tabs">
+    <button class="tab-btn active" onclick="switchTab('sposo', this)">💍 Sposo</button>
+    <button class="tab-btn" onclick="switchTab('sposa', this)">👰 Sposa</button>
+    <button class="tab-btn" onclick="switchTab('comuni', this)">🤝 Comuni</button>
+  </div>
+
+  <div class="guest-section active" id="sec-sposo">
+    <div class="print-title">💍 Invitati Sposo</div>
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="openAddForm('sposo')">+ Aggiungi Invitato</button>
+      <button class="btn btn-ghost" onclick="openGroupForm('sposo')">+ Nuovo Gruppo</button>
+      <button class="btn btn-ghost" onclick="toggleCollapseAll('sposo')" title="Comprimi/espandi tutti i gruppi">⊟ Comprimi gruppi</button>
+    </div>
+    <div class="add-form" id="group-form-sposo">
+      <h3>Nuovo gruppo – Sposo</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Tipo di gruppo</label><select id="input-group-tipo-sposo"><option value="generico">Gruppo Generico</option><option value="famiglia">Famiglia</option></select></div>
+        <div class="form-group"><label>Nome del gruppo</label><input type="text" id="input-group-nome-sposo" placeholder="Es. Famiglia Rossi" /></div>
+        <button class="btn btn-primary" onclick="addGroup('sposo')">Crea</button>
+        <button class="btn btn-ghost" onclick="closeGroupForm('sposo')">Annulla</button>
+      </div>
+    </div>
+    <div class="add-form" id="form-sposo">
+      <h3>Nuovo invitato – Sposo</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Nome e Cognome</label><input type="text" name="nome" placeholder="Es. Mario Rossi" id="input-nome-sposo" /></div>
+        <div class="form-group"><label>Tipo</label><select id="input-tipo-sposo"><option value="adulto">Adulto</option><option value="bambino">Bambino</option><option value="neonato">Neonato</option></select></div>
+        <div class="form-group"><label>Gruppo</label><select id="input-gruppo-sposo"></select></div>
+        <button class="btn btn-primary" onclick="addGuest('sposo')">Aggiungi</button>
+        <button class="btn btn-ghost" onclick="closeAddForm('sposo')">Annulla</button>
+      </div>
+    </div>
+    <div class="groups-area" id="groups-sposo"></div>
+  </div>
+
+  <div class="guest-section" id="sec-sposa">
+    <div class="print-title">👰 Invitati Sposa</div>
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="openAddForm('sposa')">+ Aggiungi Invitato</button>
+      <button class="btn btn-ghost" onclick="openGroupForm('sposa')">+ Nuovo Gruppo</button>
+      <button class="btn btn-ghost" onclick="toggleCollapseAll('sposa')" title="Comprimi/espandi tutti i gruppi">⊟ Comprimi gruppi</button>
+    </div>
+    <div class="add-form" id="group-form-sposa">
+      <h3>Nuovo gruppo – Sposa</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Tipo di gruppo</label><select id="input-group-tipo-sposa"><option value="generico">Gruppo Generico</option><option value="famiglia">Famiglia</option></select></div>
+        <div class="form-group"><label>Nome del gruppo</label><input type="text" id="input-group-nome-sposa" placeholder="Es. Famiglia Bianchi" /></div>
+        <button class="btn btn-primary" onclick="addGroup('sposa')">Crea</button>
+        <button class="btn btn-ghost" onclick="closeGroupForm('sposa')">Annulla</button>
+      </div>
+    </div>
+    <div class="add-form" id="form-sposa">
+      <h3>Nuovo invitato – Sposa</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Nome e Cognome</label><input type="text" name="nome" placeholder="Es. Maria Bianchi" id="input-nome-sposa" /></div>
+        <div class="form-group"><label>Tipo</label><select id="input-tipo-sposa"><option value="adulto">Adulto</option><option value="bambino">Bambino</option><option value="neonato">Neonato</option></select></div>
+        <div class="form-group"><label>Gruppo</label><select id="input-gruppo-sposa"></select></div>
+        <button class="btn btn-primary" onclick="addGuest('sposa')">Aggiungi</button>
+        <button class="btn btn-ghost" onclick="closeAddForm('sposa')">Annulla</button>
+      </div>
+    </div>
+    <div class="groups-area" id="groups-sposa"></div>
+  </div>
+
+  <div class="guest-section" id="sec-comuni">
+    <div class="print-title">🤝 Invitati Comuni</div>
+    <div class="toolbar">
+      <button class="btn btn-primary" onclick="openAddForm('comuni')">+ Aggiungi Invitato</button>
+      <button class="btn btn-ghost" onclick="openGroupForm('comuni')">+ Nuovo Gruppo</button>
+      <button class="btn btn-ghost" onclick="toggleCollapseAll('comuni')" title="Comprimi/espandi tutti i gruppi">⊟ Comprimi gruppi</button>
+    </div>
+    <div class="add-form" id="group-form-comuni">
+      <h3>Nuovo gruppo – Comuni</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Tipo di gruppo</label><select id="input-group-tipo-comuni"><option value="generico">Gruppo Generico</option><option value="famiglia">Famiglia</option></select></div>
+        <div class="form-group"><label>Nome del gruppo</label><input type="text" id="input-group-nome-comuni" placeholder="Es. Famiglia Verdi" /></div>
+        <button class="btn btn-primary" onclick="addGroup('comuni')">Crea</button>
+        <button class="btn btn-ghost" onclick="closeGroupForm('comuni')">Annulla</button>
+      </div>
+    </div>
+    <div class="add-form" id="form-comuni">
+      <h3>Nuovo invitato – Comuni</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Nome e Cognome</label><input type="text" name="nome" placeholder="Es. Luca Verdi" id="input-nome-comuni" /></div>
+        <div class="form-group"><label>Tipo</label><select id="input-tipo-comuni"><option value="adulto">Adulto</option><option value="bambino">Bambino</option><option value="neonato">Neonato</option></select></div>
+        <div class="form-group"><label>Gruppo</label><select id="input-gruppo-comuni"></select></div>
+        <button class="btn btn-primary" onclick="addGuest('comuni')">Aggiungi</button>
+        <button class="btn btn-ghost" onclick="closeAddForm('comuni')">Annulla</button>
+      </div>
+    </div>
+    <div class="groups-area" id="groups-comuni"></div>
+  </div>
+</div>
+<div id="toast"></div>
+`;function qt(M){const t=o=>M.querySelector(o),{uid:D,esc:_,toast:w}=J,g=["sposo","sposa","comuni"],S={sposo:"Sposo",sposa:"Sposa",comuni:"Comuni",sposi:"Sposi"},j=["Coniuge","Convivente","Figlio/a","Genitore","Fratello/Sorella","Nonno/a","Nipote","Zio/a","Cugino/a","Suocero/a","Genero/Nuora","Cognato/a","Altro parente","Amico/Ospite"];function T(){return{id:"sposi",name:"Sposi",type:"sposi",guests:[]}}function B(o){o.menu===void 0&&(o.menu=""),o.celiaco===void 0&&(o.celiaco=!1),o.lattosio===void 0&&(o.lattosio=!1),o.menu==="celiaco"&&(o.celiaco=!0,o.menu="")}let v={sposi:T(),sposo:{groups:[],groupOrder:[]},sposa:{groups:[],groupOrder:[]},comuni:{groups:[],groupOrder:[]}},I={adulto:0,adultoMenu:{carne:0,pesce:0,vegetariano:0,vegano:0},bambino:0,neonato:0},k=null,L=new Set;function y(){E.set("ds_invitati",v),E.set("ds_prices",I),N()}function G(){const o=E.get("ds_invitati"),r=E.get("ds_prices");o&&(v=o),r&&(I=r),(!v.sposi||v.sposi.type!=="sposi")&&(v.sposi=T()),v.sposi.id="sposi",v.sposi.type="sposi",v.sposi.name="Sposi",Array.isArray(v.sposi.guests)||(v.sposi.guests=[]),v.sposi.guests.forEach(B),g.forEach(s=>{v[s]||(v[s]={groups:[],groupOrder:[]}),v[s].groupOrder||(v[s].groupOrder=v[s].groups.map(c=>c.id)),v[s].groups.forEach(c=>{c.type||(c.type="generico"),c.capofamiglia===void 0&&(c.capofamiglia=null),c.guests.forEach(u=>{u.parentela===void 0&&(u.parentela=""),B(u)})})}),N()}function N(){const o=t("#last-saved");o&&(o.textContent=E.lastSavedLabel())}function f(o,r){return o==="sposi"?v.sposi:v[o].groups.find(s=>s.id===r)}function F(){const o=I.adultoMenu||{};t("#p-adulto").value=I.adulto||"",t("#p-adulto-carne").value=o.carne||"",t("#p-adulto-pesce").value=o.pesce||"",t("#p-adulto-vegetariano").value=o.vegetariano||"",t("#p-adulto-vegano").value=o.vegano||"",t("#p-bambino").value=I.bambino||"",t("#p-neonato").value=I.neonato||""}function z(){const o=r=>parseFloat(t(r).value)||0;I.adulto=o("#p-adulto"),I.adultoMenu={carne:o("#p-adulto-carne"),pesce:o("#p-adulto-pesce"),vegetariano:o("#p-adulto-vegetariano"),vegano:o("#p-adulto-vegano")},I.bambino=o("#p-bambino"),I.neonato=o("#p-neonato")}function A(o){if(o.tipo==="bambino")return I.bambino||0;if(o.tipo==="neonato")return I.neonato||0;const r=I.adultoMenu||{};return o.menu&&r[o.menu]?r[o.menu]:I.adulto||0}function R(){z(),y(),et()}function q(o,r){M.querySelectorAll(".guest-section").forEach(s=>s.classList.remove("active")),M.querySelectorAll(".tab-btn").forEach(s=>s.classList.remove("active")),t("#sec-"+o).classList.add("active"),r.classList.add("active")}function U(o){t("#form-"+o).classList.add("open"),n(o),t("#input-nome-"+o).focus()}function C(o){t("#form-"+o).classList.remove("open"),t("#input-nome-"+o).value=""}function n(o){const r=t("#input-gruppo-"+o),s=r.value;r.innerHTML="",a(o).forEach(c=>{const u=document.createElement("option");u.value=c.id,u.textContent=c.name+(c.type==="famiglia"?" (Famiglia)":""),r.appendChild(u)}),s&&(r.value=s)}function a(o){const r=v[o];return r.groupOrder.map(s=>r.groups.find(c=>c.id===s)).filter(Boolean)}function d(o){t("#group-form-"+o).classList.add("open");const r=t("#input-group-nome-"+o);r.value="",r.focus(),r.onkeydown=s=>{s.key==="Enter"&&i(o),s.key==="Escape"&&e(o)}}function e(o){t("#group-form-"+o).classList.remove("open")}function i(o){const r=t("#input-group-nome-"+o),s=t("#input-group-tipo-"+o).value,c=(r?r.value.trim():"")||(s==="famiglia"?"Famiglia ":"Gruppo ")+(v[o].groups.length+1),u={id:D(),name:c,type:s,capofamiglia:null,guests:[]};v[o].groups.push(u),v[o].groupOrder.push(u.id),y(),e(o),X(o),n(o),w('Gruppo "'+u.name+'" creato')}function l(o,r,s){const c=v[o].groupOrder,u=c.indexOf(r);if(u<0)return;const p=u+s;p<0||p>=c.length||([c[u],c[p]]=[c[p],c[u]],y(),X(o))}function x(o,r,s,c){const u=f(o,r);if(!u)return;const p=u.guests,m=p.findIndex(V=>V.id===s);if(m<0)return;const O=m+c;O<0||O>=p.length||([p[m],p[O]]=[p[O],p[m]],y(),o==="sposi"?nt():X(o))}function b(o,r){confirm("Eliminare il gruppo e tutti i suoi invitati?")&&(v[o].groups=v[o].groups.filter(s=>s.id!==r),v[o].groupOrder=v[o].groupOrder.filter(s=>s!==r),y(),X(o),w("Gruppo eliminato"))}function h(o,r,s){const c=f(o,r);!c||c.type==="sposi"||(c.name=s.value.trim()||c.name,y(),et())}function $(o,r){L.has(r)?L.delete(r):L.add(r),X(o)}function P(o){const r=v[o].groups.map(c=>c.id);if(!r.length)return;r.some(c=>!L.has(c))?r.forEach(c=>L.add(c)):r.forEach(c=>L.delete(c)),X(o)}function H(o,r,s){const c=f(o,r);!c||c.type!=="famiglia"||(c.capofamiglia=c.capofamiglia===s?null:s,y(),X(o),w(c.capofamiglia?"👑 Referente impostato":"Referente rimosso"))}function K(o,r,s,c){const u=f(o,r);if(!u)return;const p=u.guests.find(m=>m.id===s);p&&(p.parentela=c,y())}function Q(o,r){let s='<option value="">Sposta in…</option>',c=0;return g.forEach(u=>{const p=a(u).filter(m=>!(u===o&&m.id===r));p.length&&(s+=`<optgroup label="${S[u]}">`,p.forEach(m=>{s+=`<option value="${u}:${m.id}">${_(m.name)}${m.type==="famiglia"?" (Fam.)":""}</option>`,c++}),s+="</optgroup>")}),c?s:null}function at(o,r,s,c){if(!c)return;const[u,p]=c.split(":"),m=f(o,r),O=f(u,p);if(!m||!O||m===O)return;const V=m.guests.findIndex(tt=>tt.id===s);if(V<0)return;const[Z]=m.guests.splice(V,1);m.capofamiglia===s&&(m.capofamiglia=null),Z.parentela="",O.guests.push(Z),y(),ct(),w(Z.name+' spostato/a in "'+O.name+'"')}function W(o){const r=o.closest(".group-header").querySelector(".group-name-input");r&&(r.focus(),r.select())}function dt(o){const r=o.closest(".guest-item").querySelector(".guest-name-input");r&&(r.focus(),r.select())}function Y(o){o.closest(".guest-item").classList.toggle("expanded")}function it(o){o.closest(".family-group").classList.toggle("expanded")}function ot(o){const r=t("#input-nome-"+o).value.trim();if(!r){w("Inserisci il nome dell'invitato");return}const s=t("#input-tipo-"+o).value,c=t("#input-gruppo-"+o).value;if(!c){w("Crea prima un gruppo");return}const u={id:D(),name:r,tipo:s,status:"da_invitare",formale:!1,parentela:"",menu:"",celiaco:!1,lattosio:!1};v[o].groups.find(m=>m.id===c).guests.push(u),y(),X(o),C(o),w(r+" aggiunto/a")}function st(o,r){k=k===r?null:r,X(o),k===r&&vt(r)}function vt(o){const r=M.querySelector(`.family-group[data-gid="${o}"] .group-add-name`);r&&r.focus()}function wt(o,r){const s=M.querySelector(`.family-group[data-gid="${r}"] .group-add`);if(!s)return;const c=s.querySelector(".group-add-name"),u=s.querySelector(".group-add-tipo"),p=c.value.trim();if(!p){w("Inserisci il nome dell'invitato"),c.focus();return}const m=v[o].groups.find(O=>O.id===r);m&&(m.guests.push({id:D(),name:p,tipo:u.value,status:"da_invitare",formale:!1,parentela:"",menu:"",celiaco:!1,lattosio:!1}),y(),k=r,X(o),vt(r),w(p+' aggiunto/a a "'+m.name+'"'))}function mt(){const o=t("#input-sposi-nome"),r=o.value.trim();if(!r){w("Inserisci il nome dello sposo/a");return}v.sposi.guests.push({id:D(),name:r,tipo:"adulto",status:"confermato",formale:!1,parentela:"",menu:"",celiaco:!1,lattosio:!1}),y(),nt(),o.value="",o.focus(),w(r+" aggiunto/a agli sposi")}function St(o,r,s){const c=f(o,r);c&&(c.guests=c.guests.filter(u=>u.id!==s),c.capofamiglia===s&&(c.capofamiglia=null),y(),o==="sposi"?nt():X(o))}function zt(o,r,s,c){const p=f(o,r).guests.find(O=>O.id===s);if(c==="confermato"&&p.formale){p.formale=!1,p.status=c,y(),o==="sposi"?nt():X(o),w("⚠ "+p.name+' ha confermato: rimosso da "Formali", ora incluso nei conteggi');return}p.status=c;const m=M.querySelector(`[data-giid="${s}"]`);if(m){At(m,c);const O=m.closest(".guest-item"),V=O&&O.querySelector(".status-dot");V&&(V.className="status-dot status-"+c)}y(),et()}function Ct(o,r,s,c){const u=f(o,r),p=u.guests.find(m=>m.id===s);p.name=c.trim()||p.name,y(),u.type==="famiglia"&&u.capofamiglia===s&&X(o)}function Et(o,r,s,c){const u=f(o,r),p=u&&u.guests.find(O=>O.id===s);if(!p)return;p.tipo=c;const m=M.querySelector(`.guest-item[data-giid="${s}"] .tipo-select`);m&&(m.className="tipo-select tipo-"+c),y(),et()}function kt(o,r,s,c){const u=f(o,r),p=u&&u.guests.find(O=>O.id===s);if(!p)return;p.menu=c;const m=M.querySelector(`.guest-item[data-giid="${s}"] .menu-select`);m&&(m.className="menu-select menu-"+(c||"none")),y(),et()}function $t(o,r,s,c){const u=f(o,r),p=u&&u.guests.find(m=>m.id===s);p&&(p.celiaco=!p.celiaco,c.classList.toggle("active",p.celiaco),y(),et())}function Lt(o,r,s,c){const u=f(o,r),p=u&&u.guests.find(m=>m.id===s);p&&(p.lattosio=!p.lattosio,c.classList.toggle("active",p.lattosio),y(),et())}function At(o,r){o.className="status-select status-"+r}function Tt(o,r,s,c){const p=f(o,r).guests.find(m=>m.id===s);if(!p.formale&&p.status==="confermato"){w("Non puoi marcare come formale un invitato già confermato");return}p.formale=!p.formale,c.classList.toggle("active",p.formale),c.textContent=p.formale?"⚠ Formale":"Formale",c.closest(".guest-item").classList.toggle("formale",p.formale),y(),et()}function It(){const o=[];return v.sposi.guests.forEach(r=>o.push(r)),g.forEach(r=>{v[r].groups.forEach(s=>s.guests.forEach(c=>o.push(c)))}),o}function et(){const o=It(),r=o.filter(p=>!p.formale),s=(p,m)=>p.filter(m).length,c=p=>p.reduce((m,O)=>m+A(O),0);t("#s-totale").textContent=r.length,t("#s-adulti").textContent=s(r,p=>p.tipo==="adulto"),t("#s-bambini").textContent=s(r,p=>p.tipo==="bambino"),t("#s-neonati").textContent=s(r,p=>p.tipo==="neonato"),t("#s-formali").textContent=o.length-r.length;const u=p=>v[p].groups.reduce((m,O)=>m+O.guests.filter(V=>!V.formale).length,0);t("#s-sec-sposo").textContent=u("sposo"),t("#s-sec-sposa").textContent=u("sposa"),t("#s-sec-comuni").textContent=u("comuni"),t("#s-sec-sposi").textContent=v.sposi.guests.filter(p=>!p.formale).length,t("#s-menu-carne").textContent=s(r,p=>p.menu==="carne"),t("#s-menu-pesce").textContent=s(r,p=>p.menu==="pesce"),t("#s-menu-vegetariano").textContent=s(r,p=>p.menu==="vegetariano"),t("#s-menu-vegano").textContent=s(r,p=>p.menu==="vegano"),t("#s-menu-nd").textContent=s(r,p=>!p.menu),t("#s-celiaci").textContent=s(r,p=>p.celiaco),t("#s-lattosio").textContent=s(r,p=>p.lattosio),t("#s-da_invitare").textContent=s(o,p=>p.status==="da_invitare"),t("#s-invitato").textContent=s(o,p=>p.status==="invitato"),t("#s-confermato").textContent=s(o,p=>p.status==="confermato"),t("#s-annullato").textContent=s(o,p=>p.status==="annullato"),t("#s-costo").textContent=J.fmtEur(c(r.filter(p=>p.status!=="annullato"))),t("#s-costo-confermati").textContent=J.fmtEur(c(r.filter(p=>p.status==="confermato")))}function _t(){const o={da_invitare:"Invito da inviare",invitato:"Invito inviato",confermato:"Confermato",annullato:"Annullato"},r={carne:"Carne",pesce:"Pesce",vegetariano:"Vegetariano",vegano:"Vegano"},s=[["Sezione","Gruppo","Tipo gruppo","Nome","Tipo","Menù","Celiaco","Senza lattosio","Parentela","Referente","Stato invito","Formale"]],c=(u,p)=>p.guests.forEach(m=>{const O=p.type==="famiglia"&&p.capofamiglia===m.id,V=p.type==="famiglia"?"Famiglia":p.type==="sposi"?"Sposi":"Generico",Z=O?"Referente":p.type==="famiglia"&&m.parentela||"";s.push([u,p.name,V,m.name,m.tipo,r[m.menu]||"",m.celiaco?"Sì":"",m.lattosio?"Sì":"",Z,O?"Sì":"",o[m.status]||m.status,m.formale?"Sì":"No"])});if(c("Sposi",v.sposi),g.forEach(u=>a(u).forEach(p=>c(S[u],p))),s.length===1){w("Nessun invitato da esportare");return}J.downloadCSV("invitati-"+new Date().toISOString().slice(0,10)+".csv",s),w("CSV esportato ("+(s.length-1)+" invitati)")}function X(o){const r=t("#groups-"+o);r.innerHTML="";const s=a(o);if(!s.length){r.innerHTML='<p style="color:var(--muted);font-size:.9rem;padding:12px 0">Nessun gruppo creato. Clicca "+ Nuovo Gruppo" per iniziare.</p>',et();return}s.forEach(c=>r.appendChild(Nt(o,c))),Ot(o),et()}function nt(){const o=t("#groups-sposi");o.innerHTML="";const r=document.createElement("div");r.className="family-group sposi-group",r.dataset.gid="sposi";const s=v.sposi,c=document.createElement("div");c.className="group-header",c.innerHTML=`
+      <span class="group-type-badge sposi">💑 Sposi</span>
+      <div class="group-name-wrap"><strong>Gli Sposi</strong></div>
+      <span class="group-count">${s.guests.length} ${s.guests.length===1?"persona":"persone"}</span>
+    `,r.appendChild(c);const u=document.createElement("div");if(u.className="group-body",s.guests.length){const m=document.createElement("ul");m.className="guest-list",m.dataset.sec="sposi",m.dataset.gid="sposi",s.guests.forEach(O=>m.appendChild(gt("sposi",s,O))),u.appendChild(m),ft(m,"sposi","sposi")}else u.innerHTML='<div class="empty-group">Aggiungi i due sposi qui sotto</div>';if(s.guests.length<2){const m=document.createElement("div");m.className="sposi-add",m.innerHTML=`
+        <input type="text" id="input-sposi-nome" placeholder="Nome dello sposo / della sposa" />
+        <button class="btn btn-sm btn-primary" onclick="addSpouse()">+ Aggiungi</button>
+      `,u.appendChild(m)}r.appendChild(u),o.appendChild(r);const p=t("#input-sposi-nome");p&&(p.onkeydown=m=>{m.key==="Enter"&&mt()}),et()}function Nt(o,r){const s=L.has(r.id),c=document.createElement("div");c.className="family-group"+(r.type==="famiglia"?" is-famiglia":"")+(s?" collapsed":""),c.dataset.gid=r.id;const u=r.type==="famiglia"?'<span class="group-type-badge famiglia">👪 Famiglia</span>':'<span class="group-type-badge generico">Gruppo</span>';let p="";if(r.type==="famiglia"&&r.capofamiglia){const tt=r.guests.find(rt=>rt.id===r.capofamiglia);tt&&(p=`<span class="capo-name" title="Referente">👑 ${_(tt.name)}</span>`)}const m=document.createElement("div");m.className="group-header",m.innerHTML=`
+      <span class="drag-handle" title="Trascina per riordinare">⠿</span>
+      <button class="group-collapse" title="${s?"Espandi la lista":"Comprimi la lista"}" onclick="toggleGroupCollapse('${o}','${r.id}')">${s?"▸":"▾"}</button>
+      <div class="group-name-wrap">
+        <input class="group-name-input" value="${_(r.name)}"
+          onblur="renameGroup('${o}','${r.id}',this)"
+          onkeydown="if(event.key==='Enter')this.blur()" />
+        <button class="edit-btn" title="Rinomina il gruppo" onclick="focusGroupName(this)">✏️</button>
+        ${u}
+        ${p}
+        <span class="group-count">${r.guests.length} invitat${r.guests.length===1?"o":"i"}</span>
+      </div>
+      <button class="group-toggle" title="Opzioni gruppo" onclick="toggleGroupActions(this)">⋯</button>
+      <div class="group-actions">
+        <button class="btn btn-sm btn-ghost" onclick="moveGroup('${o}','${r.id}',-1)" title="Sposta su">▲</button>
+        <button class="btn btn-sm btn-ghost" onclick="moveGroup('${o}','${r.id}',1)" title="Sposta giù">▼</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteGroup('${o}','${r.id}')" title="Elimina gruppo">✕</button>
+      </div>
+    `,c.appendChild(m);const O=document.createElement("div");if(O.className="group-body",!r.guests.length)O.innerHTML='<div class="empty-group">Nessun invitato in questo gruppo</div>';else{const tt=document.createElement("ul");tt.className="guest-list",tt.dataset.sec=o,tt.dataset.gid=r.id,r.guests.forEach(rt=>tt.appendChild(gt(o,r,rt))),O.appendChild(tt),ft(tt,o,r.id)}const V=k===r.id,Z=document.createElement("div");return Z.className="group-add-wrap",Z.innerHTML=V?`
+      <div class="group-add">
+        <input type="text" class="group-add-name" placeholder="Nome e cognome"
+          onkeydown="if(event.key==='Enter')addGuestToGroup('${o}','${r.id}');else if(event.key==='Escape')toggleGroupAdd('${o}','${r.id}')" />
+        <select class="group-add-tipo"><option value="adulto">Adulto</option><option value="bambino">Bambino</option><option value="neonato">Neonato</option></select>
+        <button class="btn btn-sm btn-primary" onclick="addGuestToGroup('${o}','${r.id}')">Aggiungi</button>
+        <button class="btn btn-sm btn-ghost" onclick="toggleGroupAdd('${o}','${r.id}')">Chiudi</button>
+      </div>`:`
+      <button class="btn btn-sm btn-ghost group-add-btn" onclick="toggleGroupAdd('${o}','${r.id}')">＋ Aggiungi invitato</button>`,O.appendChild(Z),c.appendChild(O),c}function gt(o,r,s){const c=r.id,u=document.createElement("li");u.className="guest-item",u.draggable=!1,u.dataset.giid=s.id;const p=r.type==="famiglia",m=r.type==="sposi",O=p&&r.capofamiglia===s.id;O&&u.classList.add("capofamiglia"),s.formale&&u.classList.add("formale");const V=p?`
+      <button class="crown-btn ${O?"active":""}"
+        title="${O?"È il referente (clic per rimuovere)":"Imposta come referente"}"
+        onclick="setCapofamiglia('${o}','${c}','${s.id}')">👑</button>`:"";let Z="";if(p)if(O)Z='<span class="parentela-static" title="Referente">Referente</span>';else{const Pt=['<option value="">— Parentela —</option>'].concat(j.map(pt=>`<option value="${pt}" ${s.parentela===pt?"selected":""}>${pt}</option>`)).join("");Z=`<select class="parentela-select" title="Parentela rispetto al referente"
+          onchange="setParentela('${o}','${c}','${s.id}',this.value)">${Pt}</select>`}const tt=m?null:Q(o,c),rt=tt?`<select class="group-move-select" title="Sposta in un altro gruppo"
+           onchange="moveGuestToGroup('${o}','${c}','${s.id}',this.value)">${tt}</select>`:"",Ft=m?"":`
+      <button class="flag-btn ${s.formale?"active":""}" title="Invitato formale: escluso dai conteggi"
+        onclick="toggleFormale('${o}','${c}','${s.id}',this)">
+        ${s.formale?"⚠ Formale":"Formale"}
+      </button>`;return u.innerHTML=`
+      <div class="guest-main">
+        <span class="guest-drag" title="Trascina">⠿</span>
+        ${O?'<span class="capo-marker" title="Referente">👑</span>':""}
+        <input class="guest-name-input" value="${_(s.name)}"
+          onblur="updateGuestName('${o}','${c}','${s.id}',this.value)"
+          onkeydown="if(event.key==='Enter')this.blur()" />
+        <span class="status-dot status-${s.status}" title="Stato invito"></span>
+        <button class="guest-toggle" title="Opzioni invitato" onclick="toggleGuestActions(this)">⋯</button>
+      </div>
+      <div class="guest-actions">
+        <select class="tipo-select tipo-${s.tipo}" title="Età / tipo invitato"
+          onchange="updateGuestTipo('${o}','${c}','${s.id}',this.value)">
+          <option value="adulto"  ${s.tipo==="adulto"?"selected":""}>Adulto</option>
+          <option value="bambino" ${s.tipo==="bambino"?"selected":""}>Bambino</option>
+          <option value="neonato" ${s.tipo==="neonato"?"selected":""}>Neonato</option>
+        </select>
+        <select class="menu-select menu-${s.menu||"none"}" title="Tipo di menù"
+          onchange="updateGuestMenu('${o}','${c}','${s.id}',this.value)">
+          <option value=""            ${s.menu?"":"selected"}>🍽️ Menù…</option>
+          <option value="carne"       ${s.menu==="carne"?"selected":""}>🥩 Carne</option>
+          <option value="pesce"       ${s.menu==="pesce"?"selected":""}>🐟 Pesce</option>
+          <option value="vegetariano" ${s.menu==="vegetariano"?"selected":""}>🥗 Vegetariano</option>
+          <option value="vegano"      ${s.menu==="vegano"?"selected":""}>🌱 Vegano</option>
+        </select>
+        <button class="flag-btn ${s.celiaco?"active":""}" title="Celiaco (senza glutine)"
+          onclick="toggleCeliaco('${o}','${c}','${s.id}',this)">🌾 Celiaco</button>
+        <button class="flag-btn ${s.lattosio?"active":""}" title="Intollerante al lattosio (senza lattosio)"
+          onclick="toggleLattosio('${o}','${c}','${s.id}',this)">🥛 Senza lattosio</button>
+        <button class="edit-btn" title="Rinomina l'invitato" onclick="focusGuestName(this)">✏️</button>
+        ${V}
+        ${Z}
+        ${rt}
+        <select class="status-select status-${s.status}" data-giid="${s.id}"
+          onchange="updateGuestStatus('${o}','${c}','${s.id}',this.value)">
+          <option value="da_invitare" ${s.status==="da_invitare"?"selected":""}>Invito da inviare</option>
+          <option value="invitato"    ${s.status==="invitato"?"selected":""}>Invito inviato</option>
+          <option value="confermato"  ${s.status==="confermato"?"selected":""}>Confermato</option>
+          <option value="annullato"   ${s.status==="annullato"?"selected":""}>Annullato</option>
+        </select>
+        ${Ft}
+        <button class="flag-btn" onclick="moveGuest('${o}','${c}','${s.id}',-1)" title="Sposta su">▲</button>
+        <button class="flag-btn" onclick="moveGuest('${o}','${c}','${s.id}',1)" title="Sposta giù">▼</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteGuest('${o}','${c}','${s.id}')">✕</button>
+      </div>
+    `,u}function Ot(o){const r=t("#groups-"+o),s=r.querySelectorAll(".family-group");let c=null;s.forEach(u=>{const p=u.querySelector(".drag-handle");p&&(p.addEventListener("mousedown",()=>{u.draggable=!0}),p.addEventListener("touchstart",()=>{u.draggable=!0},{passive:!0})),u.addEventListener("dragstart",m=>{c=u,setTimeout(()=>u.classList.add("dragging"),0),m.dataTransfer.effectAllowed="move"}),u.addEventListener("dragend",()=>{u.classList.remove("dragging"),u.draggable=!1,r.querySelectorAll(".family-group").forEach(O=>O.classList.remove("drop-target")),c=null;const m=[...r.querySelectorAll(".family-group")].map(O=>O.dataset.gid);v[o].groupOrder=m,y()}),u.addEventListener("dragover",m=>{if(m.preventDefault(),!c||c===u)return;u.classList.add("drop-target");const O=u.getBoundingClientRect(),V=O.top+O.height/2;m.clientY<V?r.insertBefore(c,u):r.insertBefore(c,u.nextSibling)}),u.addEventListener("dragleave",()=>u.classList.remove("drop-target")),u.addEventListener("drop",m=>{m.preventDefault(),u.classList.remove("drop-target")})})}function ft(o,r,s){let c=null;o.querySelectorAll(".guest-item").forEach(u=>{const p=u.querySelector(".guest-drag");p&&(p.addEventListener("mousedown",()=>{u.draggable=!0}),p.addEventListener("touchstart",()=>{u.draggable=!0},{passive:!0})),u.addEventListener("dragstart",m=>{c=u,setTimeout(()=>u.classList.add("dragging"),0),m.dataTransfer.effectAllowed="move",m.stopPropagation()}),u.addEventListener("dragend",()=>{u.classList.remove("dragging"),u.draggable=!1,o.querySelectorAll(".guest-item").forEach(V=>V.classList.remove("drop-target")),c=null;const m=f(r,s),O=[...o.querySelectorAll(".guest-item")].map(V=>V.dataset.giid);m.guests=O.map(V=>m.guests.find(Z=>Z.id===V)).filter(Boolean),y()}),u.addEventListener("dragover",m=>{if(m.preventDefault(),m.stopPropagation(),!c||c===u)return;u.classList.add("drop-target");const O=u.getBoundingClientRect();m.clientY<O.top+O.height/2?o.insertBefore(c,u):o.insertBefore(c,u.nextSibling)}),u.addEventListener("dragleave",()=>u.classList.remove("drop-target")),u.addEventListener("drop",m=>{m.preventDefault(),m.stopPropagation(),u.classList.remove("drop-target")})})}function ct(){nt(),g.forEach(X)}Object.assign(window,{switchTab:q,openAddForm:U,closeAddForm:C,addGroup:i,openGroupForm:d,closeGroupForm:e,toggleCollapseAll:P,toggleGroupCollapse:$,moveGroup:l,moveGuest:x,deleteGroup:b,renameGroup:h,setCapofamiglia:H,setParentela:K,moveGuestToGroup:at,focusGroupName:W,focusGuestName:dt,toggleGuestActions:Y,toggleGroupActions:it,addGuest:ot,toggleGroupAdd:st,addGuestToGroup:wt,addSpouse:mt,deleteGuest:St,updateGuestStatus:zt,updateGuestName:Ct,updateGuestTipo:Et,updateGuestMenu:kt,toggleCeliaco:$t,toggleLattosio:Lt,toggleFormale:Tt,exportCSV:_t}),["#p-adulto","#p-adulto-carne","#p-adulto-pesce","#p-adulto-vegetariano","#p-adulto-vegano","#p-bambino","#p-neonato"].forEach(o=>t(o).addEventListener("input",R)),G(),F(),ct();const bt=o=>{o.detail.remote&&(o.detail.key==="ds_invitati"||o.detail.key==="ds_prices")&&(G(),F(),ct())};return window.addEventListener("ds:change",bt),()=>window.removeEventListener("ds:change",bt)}const Ht=Object.freeze(Object.defineProperty({__proto__:null,html:jt,mount:qt,title:Rt},Symbol.toStringTag,{value:"Module"})),Vt="Budget – Day Special",Ut=`
+<style>
+  .budget-input-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 24px; margin-bottom: 24px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .budget-input-bar label { font-weight: 600; font-size: .95rem; }
+  .budget-input-bar input { padding: 8px 14px; border: 1px solid var(--border); border-radius: 8px; font-size: 1rem; width: 180px; background: var(--surface); color: var(--text); }
+  .budget-input-bar input:focus { outline: none; border-color: var(--accent); }
+  .import-hint { font-size: .82rem; color: var(--muted); }
+  .btn-import { padding: 8px 16px; background: var(--accent-soft); border: 1px solid var(--accent-line); color: var(--gold-txt); border-radius: 8px; cursor: pointer; font-size: .85rem; font-weight: 600; font-family: inherit; transition: background .15s; }
+  .btn-import:hover { background: var(--accent-line); }
+  .chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 24px; box-shadow: var(--shadow); }
+  .chart-wrap h2 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+  .chart-legend { font-size: .78rem; color: var(--muted); margin-bottom: 14px; display: flex; gap: 16px; }
+  .chart-legend .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+  .chart-row { display: grid; grid-template-columns: 150px 1fr auto; gap: 12px; align-items: center; padding: 6px 0; }
+  .chart-cat { font-size: .83rem; font-weight: 600; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chart-track { position: relative; height: 18px; background: var(--border-soft); border-radius: 5px; overflow: hidden; }
+  .chart-prev { position: absolute; inset: 0 auto 0 0; background: var(--accent); opacity: .35; border-radius: 5px; transition: width .4s; }
+  .chart-pag  { position: absolute; inset: 0 auto 0 0; background: var(--accent); border-radius: 5px; transition: width .4s; }
+  .chart-val { font-size: .8rem; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  @media (max-width: 600px) { .chart-row { grid-template-columns: 90px 1fr auto; } }
+  @media (max-width: 700px) {
+    .table-wrap { overflow-x: visible; border: none; box-shadow: none; background: transparent; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    thead { display: none; }
+    tbody tr { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 12px; padding: 4px 14px; }
+    tbody tr:hover { background: var(--surface); }
+    td { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border-soft); white-space: normal; }
+    td:last-child { border-bottom: none; }
+    td::before { content: attr(data-label); flex-shrink: 0; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+    td .inline-input { text-align: right; }
+    td .inline-num { width: auto; flex: 1; }
+    td .stato-select { flex: 1; }
+    .td-actions { justify-content: flex-end; }
+    .td-actions::before { content: none; }
+  }
+  .cat-badge { font-size: .72rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+  .stato-da_pagare { border-color: var(--border); color: var(--muted); }
+  .stato-acconto   { border-color: var(--warning); color: var(--warning); }
+  .stato-saldato   { border-color: var(--success); color: var(--success); }
+</style>
+<header>
+  <a class="nav-back" href="#/">← Home</a>
+  <h1>Day <span>Special</span> — Budget</h1>
+  <div class="header-actions">
+    <span class="lbl-saved" id="last-saved"></span>
+    <button class="btn btn-ghost btn-sm" id="btn-csv" title="Esporta le voci di spesa in CSV">⬇ CSV</button>
+    <button class="btn btn-ghost btn-sm" id="btn-print" title="Stampa il budget">🖨 Stampa</button>
+    <button class="icon-btn" id="theme-toggle">🌙</button>
+  </div>
+</header>
+<div class="container">
+  <details class="collapsible">
+    <summary>📊 Riepilogo budget</summary>
+    <div class="summary">
+      <div class="stat-card"><div class="val" id="s-totale">€ 0</div><div class="lbl">Budget totale</div></div>
+      <div class="stat-card warn"><div class="val" id="s-preventivato">€ 0</div><div class="lbl">Preventivato</div></div>
+      <div class="stat-card success"><div class="val" id="s-pagato">€ 0</div><div class="lbl">Pagato</div></div>
+      <div class="stat-card"><div class="val" id="s-rimanente">€ 0</div><div class="lbl">Rimanente</div></div>
+      <div class="stat-card danger"><div class="val" id="s-sforamento">€ 0</div><div class="lbl">Sforamento</div></div>
+    </div>
+  </details>
+  <details class="collapsible">
+    <summary>💰 Budget totale e catering</summary>
+    <div class="budget-input-bar collapse-inner">
+      <label>💰 Budget totale:</label>
+      <input type="number" id="input-budget-totale" min="0" step="100" placeholder="es. 20000" />
+      <span class="import-hint">Catering (da Invitati):</span>
+      <strong id="costo-catering" style="color:var(--accent-dk)">—</strong>
+      <button class="btn-import" id="btn-importa-catering">↓ Importa come voce</button>
+    </div>
+  </details>
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Preventivato sul budget</span><span id="progress-pct">0%</span></div>
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+  <div class="chart-wrap" id="chart-wrap" style="display:none">
+    <h2>📊 Spese per categoria</h2>
+    <div class="chart-legend">
+      <span><span class="dot" style="background:var(--accent);opacity:.35"></span>Preventivato</span>
+      <span><span class="dot" style="background:var(--accent)"></span>Pagato</span>
+    </div>
+    <div id="chart-rows"></div>
+  </div>
+  <div class="toolbar">
+    <button class="btn btn-primary" id="btn-open-form">+ Aggiungi voce</button>
+    <select class="filter-select" id="filter-cat"><option value="">Tutte le categorie</option></select>
+    <select class="filter-select" id="filter-stato">
+      <option value="">Tutti gli stati</option>
+      <option value="da_pagare">Da pagare</option>
+      <option value="acconto">Acconto versato</option>
+      <option value="saldato">Saldato</option>
+    </select>
+  </div>
+  <div class="add-form" id="add-form">
+    <h3 id="form-title">Nuova voce di spesa</h3>
+    <div class="form-grid">
+      <div class="form-group full"><label>Descrizione *</label><input type="text" id="f-descrizione" placeholder="Es. Fotografo" /></div>
+      <div class="form-group">
+        <label>Categoria *</label>
+        <select id="f-categoria">
+          <option value="Ricevimento">Ricevimento</option>
+          <option value="Cerimonia">Cerimonia</option>
+          <option value="Fotografia">Fotografia</option>
+          <option value="Fiori">Fiori & Decorazioni</option>
+          <option value="Musica">Musica & Intrattenimento</option>
+          <option value="Abbigliamento">Abbigliamento</option>
+          <option value="Viaggio">Viaggio di Nozze</option>
+          <option value="Partecipazioni">Partecipazioni & Bomboniere</option>
+          <option value="Altro">Altro</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Preventivo (€)</label><input type="number" id="f-preventivo" min="0" step="0.01" placeholder="0.00" /></div>
+      <div class="form-group"><label>Pagato (€)</label><input type="number" id="f-pagato" min="0" step="0.01" placeholder="0.00" /></div>
+      <div class="form-group">
+        <label>Stato</label>
+        <select id="f-stato">
+          <option value="da_pagare">Da pagare</option>
+          <option value="acconto">Acconto versato</option>
+          <option value="saldato">Saldato</option>
+        </select>
+      </div>
+      <div class="form-group full"><label>Note</label><textarea id="f-note" placeholder="Informazioni aggiuntive..."></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" id="btn-save-voce">Salva</button>
+      <button class="btn btn-ghost" id="btn-close-form">Annulla</button>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Descrizione</th><th>Categoria</th><th>Preventivo</th><th>Pagato</th><th>Stato</th><th>Note</th><th class="no-print"></th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty-state" id="empty-state" style="display:none">Nessuna voce di spesa. Clicca "+ Aggiungi voce" per iniziare.</div>
+  </div>
+</div>
+<div id="toast"></div>
+`;function Jt(M){const t=e=>M.querySelector(e),{uid:D,esc:_,toast:w,fmtEur:g}=J,S={Ricevimento:["var(--info-soft)","var(--info)"],Cerimonia:["var(--gold-soft)","var(--gold-txt)"],Fotografia:["var(--purple-soft)","var(--purple)"],Fiori:["var(--success-soft)","var(--success)"],Musica:["var(--warning-soft)","var(--warning)"],Abbigliamento:["var(--danger-soft)","var(--danger)"],Viaggio:["var(--teal-soft)","var(--teal)"],Partecipazioni:["var(--purple-soft)","var(--purple)"],Altro:["var(--border-soft)","var(--muted)"]};function j(e){const[i,l]=S[e]||S.Altro;return`background:${i};color:${l}`}let T={totale:0,voci:[]},B=null;function v(){E.set("ds_budget",T),t("#last-saved").textContent=E.lastSavedLabel()}function I(){const e=E.get("ds_budget");e&&(T=e),T.voci||(T.voci=[]),t("#input-budget-totale").value=T.totale||"",t("#last-saved").textContent=E.lastSavedLabel()}function k(){T.totale=parseFloat(t("#input-budget-totale").value)||0,v(),N()}function L(){const e=E.get("ds_invitati"),i=E.get("ds_prices");if(!e||!i)return null;let l=0;const x=h=>{if(h.tipo==="bambino")return i.bambino||0;if(h.tipo==="neonato")return i.neonato||0;const $=i.adultoMenu||{};return h.menu&&$[h.menu]?$[h.menu]:i.adulto||0},b=h=>{!h.formale&&h.status!=="annullato"&&(l+=x(h))};return e.sposi&&e.sposi.guests&&e.sposi.guests.forEach(b),["sposo","sposa","comuni"].forEach(h=>{e[h]&&e[h].groups.forEach($=>$.guests.forEach(b))}),l}function y(){const e=L();t("#costo-catering").textContent=e!==null?g(e):"(nessun dato)"}function G(){const e=L();if(e===null){w("Nessun dato invitati trovato");return}if(e===0){w("Il costo catering è € 0: imposta i prezzi del menù in Invitati");return}const i=T.voci.find(l=>l._catering);if(i){i.preventivo=e,v(),z(),w("Voce catering aggiornata");return}T.voci.push({id:D(),descrizione:"Catering / Banchetto",categoria:"Ricevimento",preventivo:e,pagato:0,stato:"da_pagare",note:"Importato da sezione Invitati",_catering:!0}),v(),z(),w("Catering aggiunto al budget")}function N(){const e=T.totale||0,i=T.voci.reduce((P,H)=>P+(H.preventivo||0),0),l=T.voci.reduce((P,H)=>P+(H.pagato||0),0),x=e-i,b=x<0?Math.abs(x):0;t("#s-totale").textContent=g(e),t("#s-preventivato").textContent=g(i),t("#s-pagato").textContent=g(l),t("#s-rimanente").textContent=g(x<0?0:x),t("#s-sforamento").textContent=b>0?g(b):"—";const h=e>0?Math.min(i/e*100,100):0,$=t("#progress-fill");$.style.width=h+"%",$.classList.toggle("over",i>e&&e>0),t("#progress-pct").textContent=Math.round(e>0?i/e*100:0)+"%",f()}function f(){const e=t("#chart-wrap"),i={};T.voci.forEach(b=>{i[b.categoria]||(i[b.categoria]={prev:0,pag:0}),i[b.categoria].prev+=b.preventivo||0,i[b.categoria].pag+=b.pagato||0});const l=Object.entries(i).filter(([,b])=>b.prev>0||b.pag>0).sort((b,h)=>h[1].prev-b[1].prev);if(!l.length){e.style.display="none";return}e.style.display="block";const x=Math.max(...l.map(([,b])=>Math.max(b.prev,b.pag)));t("#chart-rows").innerHTML=l.map(([b,h])=>{const[,$]=S[b]||S.Altro;return`<div class="chart-row">
+        <div class="chart-cat" style="color:${$}">${_(b)}</div>
+        <div class="chart-track">
+          <div class="chart-prev" style="width:${x?h.prev/x*100:0}%;background:${$}"></div>
+          <div class="chart-pag"  style="width:${x?h.pag/x*100:0}%;background:${$}"></div>
+        </div>
+        <div class="chart-val">${g(h.pag)} / ${g(h.prev)}</div>
+      </div>`}).join("")}function F(){const e=[...new Set(T.voci.map(x=>x.categoria))].sort(),i=t("#filter-cat"),l=i.value;i.innerHTML='<option value="">Tutte le categorie</option>',e.forEach(x=>{const b=document.createElement("option");b.value=x,b.textContent=x,i.appendChild(b)}),i.value=l}function z(){const e=t("#filter-cat").value,i=t("#filter-stato").value;let l=T.voci;e&&(l=l.filter(b=>b.categoria===e)),i&&(l=l.filter(b=>b.stato===i));const x=t("#tbody");x.innerHTML="",t("#empty-state").style.display=T.voci.length===0?"block":"none",l.forEach(b=>{const h=document.createElement("tr");h.innerHTML=`
+        <td data-label="Descrizione"><input class="inline-input" value="${_(b.descrizione)}" data-act="desc" data-id="${b.id}" /></td>
+        <td data-label="Categoria"><span class="cat-badge" style="${j(b.categoria)}">${_(b.categoria)}</span></td>
+        <td data-label="Preventivo"><input class="inline-input inline-num" type="number" value="${b.preventivo||0}" data-act="prev" data-id="${b.id}" /></td>
+        <td data-label="Pagato"><input class="inline-input inline-num" type="number" value="${b.pagato||0}" data-act="pag" data-id="${b.id}" /></td>
+        <td data-label="Stato">
+          <select class="stato-select stato-${b.stato}" data-act="stato" data-id="${b.id}">
+            <option value="da_pagare" ${b.stato==="da_pagare"?"selected":""}>Da pagare</option>
+            <option value="acconto"   ${b.stato==="acconto"?"selected":""}>Acconto</option>
+            <option value="saldato"   ${b.stato==="saldato"?"selected":""}>Saldato</option>
+          </select>
+        </td>
+        <td data-label="Note"><input class="inline-input" value="${_(b.note||"")}" placeholder="—" data-act="note" data-id="${b.id}" /></td>
+        <td class="no-print td-actions" style="white-space:nowrap">
+          <button class="btn btn-sm btn-ghost" data-act="edit" data-id="${b.id}" style="margin-right:4px">✏️</button>
+          <button class="btn btn-sm btn-danger" data-act="del" data-id="${b.id}">✕</button>
+        </td>`,x.appendChild(h)}),F(),N()}function A(e,i,l){const x=T.voci.find(b=>b.id===e);x&&(x[i]=l,v(),N())}function R(e){B=e?e.id:null,t("#form-title").textContent=B?"Modifica voce":"Nuova voce di spesa",t("#f-descrizione").value=e?.descrizione||"",t("#f-categoria").value=e?.categoria||"Ricevimento",t("#f-preventivo").value=e?.preventivo||"",t("#f-pagato").value=e?.pagato||"",t("#f-stato").value=e?.stato||"da_pagare",t("#f-note").value=e?.note||"",t("#add-form").classList.add("open"),t("#f-descrizione").focus()}function q(){t("#add-form").classList.remove("open"),B=null}function U(){const e=t("#f-descrizione").value.trim();if(!e){w("Inserisci una descrizione");return}const i=!!B,l={id:B||D(),descrizione:e,categoria:t("#f-categoria").value,preventivo:parseFloat(t("#f-preventivo").value)||0,pagato:parseFloat(t("#f-pagato").value)||0,stato:t("#f-stato").value,note:t("#f-note").value.trim()};if(i){const x=T.voci.findIndex(b=>b.id===B);x>=0&&(T.voci[x]={...T.voci[x],...l})}else T.voci.push(l);v(),q(),z(),w(i?"Voce aggiornata":"Voce aggiunta")}function C(e){R(T.voci.find(i=>i.id===e))}function n(e){confirm("Eliminare questa voce?")&&(T.voci=T.voci.filter(i=>i.id!==e),v(),z(),w("Voce eliminata"))}function a(){if(!T.voci.length){w("Nessuna voce da esportare");return}const e={da_pagare:"Da pagare",acconto:"Acconto versato",saldato:"Saldato"},i=[["Descrizione","Categoria","Preventivo (€)","Pagato (€)","Stato","Note"]];T.voci.forEach(l=>i.push([l.descrizione,l.categoria,(l.preventivo||0).toFixed(2).replace(".",","),(l.pagato||0).toFixed(2).replace(".",","),e[l.stato]||l.stato,l.note||""])),J.downloadCSV("budget-"+new Date().toISOString().slice(0,10)+".csv",i),w("CSV esportato ("+T.voci.length+" voci)")}t("#input-budget-totale").addEventListener("input",k),t("#btn-importa-catering").addEventListener("click",G),t("#btn-open-form").addEventListener("click",()=>R()),t("#filter-cat").addEventListener("change",z),t("#filter-stato").addEventListener("change",z),t("#btn-save-voce").addEventListener("click",U),t("#btn-close-form").addEventListener("click",q),t("#btn-csv").addEventListener("click",a),t("#btn-print").addEventListener("click",()=>window.print()),t("#tbody").addEventListener("blur",e=>{const i=e.target,l=i.dataset&&i.dataset.act;if(!l)return;const x=i.dataset.id;l==="desc"?A(x,"descrizione",i.value):l==="prev"?A(x,"preventivo",parseFloat(i.value)||0):l==="pag"?A(x,"pagato",parseFloat(i.value)||0):l==="note"&&A(x,"note",i.value)},!0),t("#tbody").addEventListener("change",e=>{const i=e.target;i.dataset&&i.dataset.act==="stato"&&(A(i.dataset.id,"stato",i.value),i.className="stato-select stato-"+i.value)}),t("#tbody").addEventListener("click",e=>{const i=e.target.closest("button[data-act]");i&&(i.dataset.act==="edit"?C(i.dataset.id):i.dataset.act==="del"&&n(i.dataset.id))}),I(),y(),z();const d=e=>{(e.detail.key==="ds_invitati"||e.detail.key==="ds_prices")&&y(),e.detail.remote&&e.detail.key==="ds_budget"&&(I(),z())};return window.addEventListener("ds:change",d),()=>window.removeEventListener("ds:change",d)}const Yt=Object.freeze(Object.defineProperty({__proto__:null,html:Ut,mount:Jt,title:Vt},Symbol.toStringTag,{value:"Module"})),Kt="Fornitori – Day Special",Zt=`
+<style>
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px,1fr)); gap: 18px; }
+  .fornitore-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; animation: fadeUp .3s ease both; transition: box-shadow .18s, border-color .18s; }
+  .fornitore-card:hover { box-shadow: var(--shadow-lg); border-color: var(--accent); }
+  .card-top { padding: 16px 18px 12px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px; }
+  .card-icon { font-size: 1.8rem; flex-shrink: 0; }
+  .card-info { flex: 1; }
+  .card-nome { font-weight: 700; font-size: 1rem; }
+  .card-azienda { font-size: .83rem; color: var(--muted); margin-top: 2px; }
+  .cat-badge { display: inline-block; font-size: .72rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; margin-top: 6px; background: var(--border-soft); color: var(--text); }
+  .stato-badge { font-size: .72rem; padding: 2px 9px; border-radius: 10px; font-weight: 600; white-space: nowrap; }
+  .card-body { padding: 12px 18px; font-size: .85rem; display: flex; flex-direction: column; gap: 6px; }
+  .card-row { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+  .card-row a { color: var(--info); text-decoration: none; }
+  .card-row a:hover { text-decoration: underline; }
+  .card-row strong { color: var(--text); }
+  .card-note { font-size: .82rem; color: var(--muted); font-style: italic; border-top: 1px solid var(--border); padding-top: 8px; margin-top: 4px; }
+  .card-actions { padding: 10px 18px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+</style>
+<header>
+  <a class="nav-back" href="#/">← Home</a>
+  <h1>Day <span>Special</span> — Fornitori</h1>
+  <div class="header-actions">
+    <span class="lbl-saved" id="last-saved"></span>
+    <button class="btn btn-ghost btn-sm" onclick="exportCSV()" title="Esporta i fornitori in CSV">⬇ CSV</button>
+    <button class="icon-btn" id="theme-toggle">🌙</button>
+  </div>
+</header>
+<div class="container">
+  <details class="collapsible">
+    <summary>📊 Riepilogo fornitori</summary>
+    <div class="summary">
+      <div class="stat-card"><div class="val" id="s-tot">0</div><div class="lbl">Fornitori</div></div>
+      <div class="stat-card"><div class="val" id="s-dacontattare">0</div><div class="lbl">Da contattare</div></div>
+      <div class="stat-card"><div class="val" id="s-contattati">0</div><div class="lbl">Contattati</div></div>
+      <div class="stat-card"><div class="val" id="s-contratti">0</div><div class="lbl">Contratti firmati</div></div>
+      <div class="stat-card"><div class="val" id="s-pagati">0</div><div class="lbl">Saldati</div></div>
+      <div class="stat-card"><div class="val" id="s-importo">€ 0</div><div class="lbl">Importo totale</div></div>
+    </div>
+  </details>
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="openForm()">+ Aggiungi fornitore</button>
+    <select class="filter-select" id="filter-cat" onchange="renderCards()"><option value="">Tutte le categorie</option></select>
+    <select class="filter-select" id="filter-stato" onchange="renderCards()">
+      <option value="">Tutti gli stati</option>
+      <option value="dacontattare">Da contattare</option>
+      <option value="contattato">Contattato</option>
+      <option value="preventivo">Preventivo ricevuto</option>
+      <option value="contratto">Contratto firmato</option>
+      <option value="saldato">Saldato</option>
+    </select>
+  </div>
+  <div class="add-form" id="add-form">
+    <h3 id="form-title">Nuovo fornitore</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Nome *</label><input type="text" id="f-nome" placeholder="Es. Mario Rossi" /></div>
+      <div class="form-group"><label>Azienda</label><input type="text" id="f-azienda" placeholder="Es. Studio Foto" /></div>
+      <div class="form-group">
+        <label>Categoria *</label>
+        <select id="f-categoria">
+          <option value="Fotografia">📷 Fotografia & Video</option>
+          <option value="Catering">🍽️ Catering & Banqueting</option>
+          <option value="Location">🏛️ Location</option>
+          <option value="Fiori">🌸 Fiori & Decorazioni</option>
+          <option value="Musica">🎵 Musica & Intrattenimento</option>
+          <option value="Abito">👗 Abito & Accessori</option>
+          <option value="Torta">🎂 Torta Nuziale</option>
+          <option value="Trasporti">🚗 Trasporti</option>
+          <option value="Acconciatura">💄 Acconciatura & Make-up</option>
+          <option value="Bomboniere">🎁 Bomboniere & Partecipazioni</option>
+          <option value="Altro">📋 Altro</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Telefono</label><input type="tel" id="f-telefono" placeholder="+39 000 0000000" /></div>
+      <div class="form-group"><label>Email</label><input type="email" id="f-email" placeholder="email@esempio.it" /></div>
+      <div class="form-group"><label>Sito web</label><input type="url" id="f-sito" placeholder="https://..." /></div>
+      <div class="form-group"><label>Preventivo (€)</label><input type="number" id="f-preventivo" min="0" step="0.01" placeholder="0.00" /></div>
+      <div class="form-group"><label>Importo accordato (€)</label><input type="number" id="f-importo" min="0" step="0.01" placeholder="0.00" /></div>
+      <div class="form-group">
+        <label>Stato</label>
+        <select id="f-stato">
+          <option value="dacontattare">Da contattare</option>
+          <option value="contattato">Contattato</option>
+          <option value="preventivo">Preventivo ricevuto</option>
+          <option value="contratto">Contratto firmato</option>
+          <option value="saldato">Saldato</option>
+        </select>
+      </div>
+      <div class="form-group full"><label>Note</label><textarea id="f-note" placeholder="Condizioni, dettagli accordo..."></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="saveFornitore()">Salva</button>
+      <button class="btn btn-ghost" onclick="closeForm()">Annulla</button>
+    </div>
+  </div>
+  <div id="cards-container"></div>
+</div>
+<div id="toast"></div>
+`;function Qt(M){const t=n=>M.querySelector(n),{uid:D,esc:_,toast:w,fmtEur:g}=J;function S(n){const a=(n||"").trim();return!a||/^\s*(javascript|data|vbscript):/i.test(a)?"#":/^https?:\/\//i.test(a)?a:"https://"+a.replace(/^\/+/,"")}const j={Fotografia:"📷",Catering:"🍽️",Location:"🏛️",Fiori:"🌸",Musica:"🎵",Abito:"👗",Torta:"🎂",Trasporti:"🚗",Acconciatura:"💄",Bomboniere:"🎁",Altro:"📋"},T={dacontattare:"background:var(--border-soft);color:var(--muted)",contattato:"background:var(--info-soft);color:var(--info)",preventivo:"background:var(--gold-soft);color:var(--gold-txt)",contratto:"background:var(--success-soft);color:var(--success)",saldato:"background:var(--teal-soft);color:var(--teal)"},B={dacontattare:"Da contattare",contattato:"Contattato",preventivo:"Preventivo ricevuto",contratto:"Contratto firmato",saldato:"Saldato"};let v={fornitori:[]},I=null;function k(){E.set("ds_fornitori",v),t("#last-saved").textContent=E.lastSavedLabel()}function L(){const n=E.get("ds_fornitori");n&&(v=n),v.fornitori||(v.fornitori=[]),t("#last-saved").textContent=E.lastSavedLabel()}function y(){const n=v.fornitori;t("#s-tot").textContent=n.length,t("#s-dacontattare").textContent=n.filter(d=>d.stato==="dacontattare").length,t("#s-contattati").textContent=n.filter(d=>d.stato==="contattato").length,t("#s-contratti").textContent=n.filter(d=>d.stato==="contratto").length,t("#s-pagati").textContent=n.filter(d=>d.stato==="saldato").length;const a=n.reduce((d,e)=>d+(e.importo||e.preventivo||0),0);t("#s-importo").textContent=g(a)}function G(){const n=[...new Set(v.fornitori.map(e=>e.categoria))].sort(),a=t("#filter-cat"),d=a.value;a.innerHTML='<option value="">Tutte le categorie</option>',n.forEach(e=>{const i=document.createElement("option");i.value=e,i.textContent=e,a.appendChild(i)}),a.value=d}function N(){const n=t("#filter-cat").value,a=t("#filter-stato").value;let d=v.fornitori;n&&(d=d.filter(l=>l.categoria===n)),a&&(d=d.filter(l=>l.stato===a));const e=t("#cards-container");if(!d.length){e.innerHTML='<div class="empty-state">Nessun fornitore. Clicca "+ Aggiungi fornitore" per iniziare.</div>',G(),y();return}const i=document.createElement("div");i.className="cards-grid",d.forEach(l=>i.appendChild(f(l))),e.innerHTML="",e.appendChild(i),G(),y()}function f(n){const a=document.createElement("div");return a.className="fornitore-card",a.innerHTML=`
+      <div class="card-top">
+        <div class="card-icon">${j[n.categoria]||"📋"}</div>
+        <div class="card-info">
+          <div class="card-nome">${_(n.nome)}</div>
+          ${n.azienda?`<div class="card-azienda">${_(n.azienda)}</div>`:""}
+          <span class="cat-badge">${_(n.categoria)}</span>
+          <span class="stato-badge" style="${T[n.stato]||""}">${B[n.stato]||""}</span>
+        </div>
+      </div>
+      <div class="card-body">
+        ${n.telefono?`<div class="card-row">📞 <a href="tel:${_(n.telefono)}">${_(n.telefono)}</a></div>`:""}
+        ${n.email?`<div class="card-row">✉️ <a href="mailto:${_(n.email)}">${_(n.email)}</a></div>`:""}
+        ${n.sito?`<div class="card-row">🌐 <a href="${_(S(n.sito))}" target="_blank" rel="noopener">Sito web</a></div>`:""}
+        ${n.preventivo?`<div class="card-row">💰 Preventivo: <strong>${g(n.preventivo)}</strong></div>`:""}
+        ${n.importo?`<div class="card-row">✅ Accordato: <strong>${g(n.importo)}</strong></div>`:""}
+        ${n.note?`<div class="card-note">${_(n.note)}</div>`:""}
+      </div>
+      <div class="card-actions">
+        <button class="btn btn-sm btn-ghost" onclick="editFornitore('${n.id}')">✏️ Modifica</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteFornitore('${n.id}')">✕ Elimina</button>
+      </div>`,a}function F(n){I=n?n.id:null,t("#form-title").textContent=I?"Modifica fornitore":"Nuovo fornitore",t("#f-nome").value=n?.nome||"",t("#f-azienda").value=n?.azienda||"",t("#f-categoria").value=n?.categoria||"Fotografia",t("#f-telefono").value=n?.telefono||"",t("#f-email").value=n?.email||"",t("#f-sito").value=n?.sito||"",t("#f-preventivo").value=n?.preventivo||"",t("#f-importo").value=n?.importo||"",t("#f-stato").value=n?.stato||"dacontattare",t("#f-note").value=n?.note||"",t("#add-form").classList.add("open"),t("#f-nome").focus()}function z(){t("#add-form").classList.remove("open"),I=null}function A(){const n=t("#f-nome").value.trim();if(!n){w("Inserisci il nome del fornitore");return}const a=!!I,d={id:I||D(),nome:n,azienda:t("#f-azienda").value.trim(),categoria:t("#f-categoria").value,telefono:t("#f-telefono").value.trim(),email:t("#f-email").value.trim(),sito:t("#f-sito").value.trim(),preventivo:parseFloat(t("#f-preventivo").value)||0,importo:parseFloat(t("#f-importo").value)||0,stato:t("#f-stato").value,note:t("#f-note").value.trim()};if(a){const e=v.fornitori.findIndex(i=>i.id===I);e>=0&&(v.fornitori[e]=d)}else v.fornitori.push(d);k(),z(),N(),w(a?"Fornitore aggiornato":"Fornitore aggiunto")}function R(n){F(v.fornitori.find(a=>a.id===n))}function q(n){confirm("Eliminare questo fornitore?")&&(v.fornitori=v.fornitori.filter(a=>a.id!==n),k(),N(),w("Fornitore eliminato"))}function U(){if(!v.fornitori.length){w("Nessun fornitore da esportare");return}const n=[["Nome","Azienda","Categoria","Telefono","Email","Sito","Preventivo (€)","Accordato (€)","Stato","Note"]];v.fornitori.forEach(a=>n.push([a.nome,a.azienda||"",a.categoria,a.telefono||"",a.email||"",a.sito||"",(a.preventivo||0).toFixed(2).replace(".",","),(a.importo||0).toFixed(2).replace(".",","),B[a.stato]||a.stato,a.note||""])),J.downloadCSV("fornitori-"+new Date().toISOString().slice(0,10)+".csv",n),w("CSV esportato ("+v.fornitori.length+" fornitori)")}Object.assign(window,{openForm:F,closeForm:z,saveFornitore:A,editFornitore:R,deleteFornitore:q,renderCards:N,exportCSV:U}),L(),N();const C=n=>{n.detail.remote&&n.detail.key==="ds_fornitori"&&(L(),N())};return window.addEventListener("ds:change",C),()=>window.removeEventListener("ds:change",C)}const Wt=Object.freeze(Object.defineProperty({__proto__:null,html:Zt,mount:Qt,title:Kt},Symbol.toStringTag,{value:"Module"})),Xt="Programma – Day Special",te=`
+<style>
+  .date-bar { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 24px; margin-bottom: 24px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .date-bar label { font-weight: 600; font-size: .95rem; }
+  .date-bar input[type=date] { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: .95rem; background: var(--surface); color: var(--text); font-family: inherit; }
+  .date-bar input[type=date]:focus { outline: none; border-color: var(--accent); }
+  .date-bar .data-display { font-size: 1rem; color: var(--accent-dk); font-weight: 700; font-family: var(--font-serif); }
+  .timeline { display: flex; flex-direction: column; gap: 0; position: relative; }
+  .timeline::before { content:''; position: absolute; left: 70px; top: 0; bottom: 0; width: 2px; background: var(--border); z-index: 0; }
+  .event-row { display: flex; gap: 0; align-items: stretch; position: relative; z-index: 1; animation: fadeUp .3s ease both; }
+  .event-row.dragging { opacity: .4; }
+  .event-row.drop-target { outline: 2px dashed var(--accent); border-radius: var(--radius); }
+  .time-col { width: 70px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 16px 0 0; }
+  .time-label { font-size: .82rem; font-weight: 700; color: var(--accent-dk); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .time-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); margin-top: 6px; flex-shrink: 0; }
+  .event-card { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin: 8px 0 8px 20px; padding: 14px 16px; box-shadow: var(--shadow); position: relative; transition: border-color .15s; }
+  .event-card:hover { border-color: var(--accent); }
+  .event-header { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .event-drag { color: var(--border); cursor: grab; font-size: .9rem; }
+  .event-drag:active { cursor: grabbing; }
+  .event-cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .event-titolo-input { font-weight: 700; font-size: .95rem; flex: 1; border: none; background: transparent; outline: none; border-bottom: 1px dashed var(--accent); color: var(--text); font-family: inherit; }
+  .event-cat-badge { font-size: .75rem; padding: 2px 8px; border-radius: 10px; background: var(--border-soft); font-weight: 600; }
+  .event-meta { font-size: .82rem; color: var(--muted); display: flex; gap: 12px; flex-wrap: wrap; }
+  .event-luogo::before { content: '📍 '; }
+  .event-durata::before { content: '⏱ '; }
+  .event-note { font-size: .82rem; color: var(--muted); margin-top: 6px; font-style: italic; }
+  .event-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; opacity: 0; transition: opacity .15s; }
+  .event-card:hover .event-actions { opacity: 1; }
+  @media (max-width: 600px) {
+    .event-actions { position: static; opacity: 1; justify-content: flex-end; margin-top: 10px; }
+    .event-card { margin-left: 14px; }
+    .event-meta { gap: 8px; }
+  }
+  @media print {
+    .date-bar input, .event-drag, .event-actions { display: none; }
+    .timeline::before { background: #ccc; }
+  }
+</style>
+<header>
+  <a class="nav-back" href="#/">← Home</a>
+  <h1>Day <span>Special</span> — Programma</h1>
+  <div class="header-actions">
+    <span class="lbl-saved" id="last-saved"></span>
+    <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Stampa la timeline">🖨 Stampa</button>
+    <button class="icon-btn" id="theme-toggle">🌙</button>
+  </div>
+</header>
+<div class="container container--narrow">
+  <details class="collapsible">
+    <summary>📅 Data del matrimonio <span class="data-display" id="data-display" style="margin-left:auto;font-size:.9rem"></span></summary>
+    <div class="date-bar collapse-inner">
+      <label>Data:</label>
+      <input type="date" id="input-data" onchange="saveData()" />
+    </div>
+  </details>
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="openForm()">+ Aggiungi evento</button>
+    <button class="btn btn-ghost" onclick="sortByTime()">⏰ Ordina per orario</button>
+  </div>
+  <div class="add-form" id="add-form">
+    <h3 id="form-title">Nuovo evento</h3>
+    <div class="form-grid">
+      <div class="form-group"><label>Orario *</label><input type="time" id="f-ora" /></div>
+      <div class="form-group full"><label>Titolo *</label><input type="text" id="f-titolo" placeholder="Es. Cerimonia religiosa" /></div>
+      <div class="form-group">
+        <label>Categoria</label>
+        <select id="f-categoria">
+          <option value="Cerimonia">💒 Cerimonia</option>
+          <option value="Preparativi">💄 Preparativi</option>
+          <option value="Foto">📷 Sessione fotografica</option>
+          <option value="Ricevimento">🥂 Ricevimento</option>
+          <option value="Trasferimento">🚗 Trasferimento</option>
+          <option value="Altro">📋 Altro</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Luogo</label><input type="text" id="f-luogo" placeholder="Es. Chiesa di San Marco" /></div>
+      <div class="form-group"><label>Durata (min)</label><input type="number" id="f-durata" min="5" step="5" placeholder="60" /></div>
+      <div class="form-group full"><label>Note</label><textarea id="f-note" placeholder="Dettagli, persone coinvolte..."></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="saveEvento()">Salva</button>
+      <button class="btn btn-ghost" onclick="closeForm()">Annulla</button>
+    </div>
+  </div>
+  <div id="timeline-wrap"></div>
+</div>
+<div id="toast"></div>
+`;function ee(M){const t=n=>M.querySelector(n),{uid:D,esc:_,toast:w}=J,g={Cerimonia:"#c9a96e",Preparativi:"#8e44ad",Foto:"#e67e22",Ricevimento:"#27ae60",Trasferimento:"#2980b9",Altro:"#8a7968"};let S={data:"",eventi:[],eventOrder:[]},j=null;function T(){E.set("ds_programma",S),t("#last-saved").textContent=E.lastSavedLabel()}function B(){const n=E.get("ds_programma");n&&(S=n),S.eventi||(S.eventi=[]),S.eventOrder||(S.eventOrder=S.eventi.map(a=>a.id)),S.data&&(t("#input-data").value=S.data,I()),t("#last-saved").textContent=E.lastSavedLabel()}function v(){S.data=t("#input-data").value,I(),T()}function I(){const n=S.data;if(!n){t("#data-display").textContent="";return}const a=new Date(n+"T00:00:00"),d={weekday:"long",year:"numeric",month:"long",day:"numeric"};t("#data-display").textContent=a.toLocaleDateString("it-IT",d)}function k(){return S.eventOrder.map(n=>S.eventi.find(a=>a.id===n)).filter(Boolean)}function L(){S.eventOrder=[...S.eventi].sort((n,a)=>n.ora.localeCompare(a.ora)).map(n=>n.id),T(),A(),w("Eventi ordinati per orario")}function y(n){j=n?n.id:null,t("#form-title").textContent=j?"Modifica evento":"Nuovo evento",t("#f-ora").value=n?.ora||"",t("#f-titolo").value=n?.titolo||"",t("#f-categoria").value=n?.categoria||"Cerimonia",t("#f-luogo").value=n?.luogo||"",t("#f-durata").value=n?.durata||"",t("#f-note").value=n?.note||"",t("#add-form").classList.add("open"),t("#f-titolo").focus()}function G(n){y(S.eventi.find(a=>a.id===n))}function N(){t("#add-form").classList.remove("open"),j=null}function f(){const n=t("#f-ora").value,a=t("#f-titolo").value.trim();if(!n||!a){w("Inserisci orario e titolo");return}const d=!!j,e={id:j||D(),ora:n,titolo:a,categoria:t("#f-categoria").value,luogo:t("#f-luogo").value.trim(),durata:parseInt(t("#f-durata").value)||0,note:t("#f-note").value.trim()};if(d){const i=S.eventi.findIndex(l=>l.id===j);i>=0&&(S.eventi[i]=e)}else S.eventi.push(e),S.eventOrder.push(e.id);T(),N(),A(),w(d?"Evento aggiornato":"Evento aggiunto")}function F(n,a){const d=S.eventOrder,e=d.indexOf(n);if(e<0)return;const i=e+a;i<0||i>=d.length||([d[e],d[i]]=[d[i],d[e]],T(),A())}function z(n){confirm("Eliminare questo evento?")&&(S.eventi=S.eventi.filter(a=>a.id!==n),S.eventOrder=S.eventOrder.filter(a=>a!==n),T(),A(),w("Evento eliminato"))}function A(){const n=t("#timeline-wrap"),a=k();if(!a.length){n.innerHTML='<div class="empty-state">Nessun evento. Clicca "+ Aggiungi evento" per costruire la timeline.</div>';return}const d=document.createElement("div");d.className="timeline",a.forEach(e=>d.appendChild(R(e))),n.innerHTML="",n.appendChild(d),U(d)}function R(n){const a=document.createElement("div");a.className="event-row",a.draggable=!0,a.dataset.eid=n.id;const d=g[n.categoria]||"#8a7968";return a.innerHTML=`
+      <div class="time-col">
+        <div class="time-label">${_(n.ora)}</div>
+        <div class="time-dot" style="background:${d}"></div>
+      </div>
+      <div class="event-card">
+        <div class="event-header">
+          <span class="event-drag" title="Trascina per riordinare">⠿</span>
+          <div class="event-cat-dot" style="background:${d}"></div>
+          <input class="event-titolo-input" value="${_(n.titolo)}"
+            onblur="updateField('${n.id}','titolo',this.value)"
+            onkeydown="if(event.key==='Enter')this.blur()" />
+          <span class="event-cat-badge" style="color:${d}">${_(n.categoria)}</span>
+        </div>
+        <div class="event-meta">
+          ${n.luogo?`<span class="event-luogo">${_(n.luogo)}</span>`:""}
+          ${n.durata?`<span class="event-durata">${n.durata} min</span>`:""}
+        </div>
+        ${n.note?`<div class="event-note">${_(n.note)}</div>`:""}
+        <div class="event-actions">
+          <button class="btn btn-sm btn-ghost" onclick="moveEvento('${n.id}',-1)" title="Sposta su">▲</button>
+          <button class="btn btn-sm btn-ghost" onclick="moveEvento('${n.id}',1)" title="Sposta giù">▼</button>
+          <button class="btn btn-sm btn-ghost" onclick="editEvento('${n.id}')">✏️</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteEvento('${n.id}')">✕</button>
+        </div>
+      </div>`,a}function q(n,a,d){const e=S.eventi.find(i=>i.id===n);!e||!d.trim()||(e[a]=d.trim(),T())}function U(n){let a=null;n.querySelectorAll(".event-row").forEach(d=>{d.addEventListener("dragstart",e=>{a=d,setTimeout(()=>d.classList.add("dragging"),0),e.dataTransfer.effectAllowed="move"}),d.addEventListener("dragend",()=>{d.classList.remove("dragging"),n.querySelectorAll(".event-row").forEach(e=>e.classList.remove("drop-target")),a=null,S.eventOrder=[...n.querySelectorAll(".event-row")].map(e=>e.dataset.eid),T()}),d.addEventListener("dragover",e=>{if(e.preventDefault(),!a||a===d)return;d.classList.add("drop-target");const i=d.getBoundingClientRect();e.clientY<i.top+i.height/2?n.insertBefore(a,d):n.insertBefore(a,d.nextSibling)}),d.addEventListener("dragleave",()=>d.classList.remove("drop-target")),d.addEventListener("drop",e=>{e.preventDefault(),d.classList.remove("drop-target")})})}Object.assign(window,{saveData:v,openForm:y,closeForm:N,saveEvento:f,editEvento:G,deleteEvento:z,moveEvento:F,sortByTime:L,updateField:q}),B(),A();const C=n=>{n.detail.remote&&n.detail.key==="ds_programma"&&(B(),A())};return window.addEventListener("ds:change",C),()=>window.removeEventListener("ds:change",C)}const oe=Object.freeze(Object.defineProperty({__proto__:null,html:te,mount:ee,title:Xt},Symbol.toStringTag,{value:"Module"})),ae="Tavoli – Day Special",ie=`
+<style>
+  .layout { display: grid; grid-template-columns: 1fr 280px; gap: 24px; align-items: start; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  .tavoli-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap: 18px; }
+  .tavolo-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; animation: fadeUp .3s ease both; }
+  .tavolo-card.drag-over { outline: 2px dashed var(--accent); }
+  .tavolo-header { background: var(--surface-2); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; gap: 8px; }
+  .tavolo-nome-input { font-weight: 700; font-size: .95rem; flex: 1; min-width: 0; border: none; background: transparent; outline: none; border-bottom: 1px dashed transparent; color: var(--text); font-family: inherit; }
+  .tavolo-nome-input:focus { border-bottom-color: var(--accent); }
+  .tavolo-posti { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+  .posti-full { color: var(--danger); font-weight: 700; }
+  .tavolo-body { padding: 10px 14px; min-height: 60px; }
+  .guest-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--border-soft); border: 1px solid var(--border); border-radius: 16px; padding: 3px 10px 3px 8px; font-size: .8rem; margin: 3px; cursor: default; }
+  .guest-chip .chip-tipo { font-size: .65rem; padding: 1px 5px; border-radius: 8px; font-weight: 600; }
+  .chip-adulto  { background: var(--info-soft); color: var(--info); }
+  .chip-bambino { background: var(--success-soft); color: var(--success); }
+  .chip-neonato { background: var(--gold-soft); color: var(--gold-txt); }
+  .chip-remove { cursor: pointer; color: var(--muted); font-size: .85rem; border: none; background: none; padding: 0; line-height: 1; }
+  .chip-remove:hover { color: var(--danger); }
+  .tavolo-empty { font-size: .82rem; color: var(--muted); padding: 8px 4px; text-align: center; font-style: italic; }
+  .tavolo-posti-input { width: 44px; padding: 2px 4px; border: 1px solid var(--border); border-radius: 4px; font-size: .85rem; text-align: center; background: var(--surface); color: var(--text); }
+  .tavolo-posti-input:focus { outline: none; border-color: var(--accent); }
+  .unassigned-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; position: sticky; top: 84px; }
+  .panel-header { background: var(--surface-2); border-bottom: 1px solid var(--border); padding: 12px 16px; font-weight: 700; font-size: .9rem; display: flex; align-items: center; justify-content: space-between; }
+  .panel-badge { background: var(--accent-soft); color: var(--gold-txt); font-size: .75rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+  .panel-search { width: 100%; padding: 8px 12px; border: none; border-bottom: 1px solid var(--border); font-size: .88rem; font-family: inherit; outline: none; background: var(--surface); color: var(--text); }
+  .panel-search:focus { border-bottom-color: var(--accent); }
+  .unassigned-list { padding: 8px; max-height: 70vh; overflow-y: auto; }
+  .unassigned-chip { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; margin: 2px 0; background: var(--bg); cursor: grab; font-size: .85rem; }
+  .unassigned-chip:active { cursor: grabbing; }
+  .unassigned-chip:hover { border-color: var(--accent); background: var(--surface-2); }
+  .panel-group-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 10px 4px 4px; border-top: 1px solid var(--border); margin-top: 4px; display: flex; justify-content: space-between; align-items: center; }
+  .panel-group-title:first-child { border-top: none; margin-top: 0; padding-top: 4px; }
+  .panel-group-count { font-size: .7rem; background: var(--border-soft); color: var(--muted); border-radius: 8px; padding: 1px 7px; font-weight: 600; }
+  .unc-sec { font-size: .68rem; padding: 1px 6px; border-radius: 8px; font-weight: 600; white-space: nowrap; }
+  .sec-sposo  { background: var(--info-soft); color: var(--info); }
+  .sec-sposa  { background: var(--purple-soft); color: var(--purple); }
+  .sec-comuni { background: var(--success-soft); color: var(--success); }
+  .sec-sposi  { background: var(--accent-soft); color: var(--gold-txt); }
+  .empty-panel { text-align: center; color: var(--muted); font-size: .82rem; padding: 20px; }
+  .guest-chip { cursor: pointer; }
+  .unassigned-chip { cursor: pointer; }
+  .assign-hint { font-size: .78rem; color: var(--muted); padding: 6px 10px 2px; }
+  .sheet-overlay { position: fixed; inset: 0; z-index: 1000; background: color-mix(in srgb, var(--bg) 55%, transparent); backdrop-filter: blur(3px); display: flex; align-items: flex-end; justify-content: center; }
+  .sheet { background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 0 0; box-shadow: var(--shadow-lg); width: 100%; max-width: 520px; max-height: 80vh; overflow-y: auto; padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); animation: fadeUp .2s ease both; }
+  .sheet-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 8px auto 12px; }
+  .sheet-title { font-weight: 700; font-size: 1rem; margin-bottom: 2px; }
+  .sheet-sub { font-size: .82rem; color: var(--muted); margin-bottom: 12px; }
+  .sheet-opt { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 13px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text); font-family: inherit; font-size: .92rem; cursor: pointer; margin-bottom: 8px; }
+  .sheet-opt:hover:not(:disabled) { border-color: var(--accent); }
+  .sheet-opt.current { border-color: var(--accent); background: var(--accent-soft); }
+  .sheet-opt:disabled { opacity: .5; cursor: not-allowed; }
+  .sheet-opt .seats { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+  .sheet-opt.danger { color: var(--danger); border-color: var(--danger-soft); }
+  @media (min-width: 600px) { .sheet-overlay { align-items: center; } .sheet { border-radius: 16px; } }
+  @media print { .layout { grid-template-columns: 1fr; } .unassigned-panel, .chip-remove, .tavolo-posti-input { display: none; } }
+</style>
+<header>
+  <a class="nav-back" href="#/">← Home</a>
+  <h1>Day <span>Special</span> — Tavoli</h1>
+  <div class="header-actions">
+    <span class="lbl-saved" id="last-saved"></span>
+    <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Stampa la disposizione tavoli">🖨 Stampa</button>
+    <button class="icon-btn" id="theme-toggle">🌙</button>
+  </div>
+</header>
+<div class="container container--wide">
+  <details class="collapsible">
+    <summary>📊 Riepilogo tavoli</summary>
+    <div class="summary">
+      <div class="stat-card"><div class="val" id="s-tavoli">0</div><div class="lbl">Tavoli</div></div>
+      <div class="stat-card"><div class="val" id="s-posti">0</div><div class="lbl">Posti totali</div></div>
+      <div class="stat-card"><div class="val" id="s-assegnati">0</div><div class="lbl">Assegnati</div></div>
+      <div class="stat-card warn"><div class="val" id="s-non-assegnati">0</div><div class="lbl">Non assegnati</div></div>
+    </div>
+  </details>
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="toggleAddForm()">+ Nuovo tavolo</button>
+  </div>
+  <div class="add-form" id="add-form">
+    <h3>Nuovo tavolo</h3>
+    <div class="form-row">
+      <div class="form-group"><label>Nome tavolo</label><input type="text" id="f-nome" placeholder="Es. Tavolo degli sposi" /></div>
+      <div class="form-group"><label>N° posti</label><input type="number" id="f-posti" min="1" max="30" value="10" style="width:80px" /></div>
+      <button class="btn btn-primary" onclick="addTavolo()">Crea</button>
+      <button class="btn btn-ghost" onclick="toggleAddForm()">Annulla</button>
+    </div>
+  </div>
+  <div class="layout">
+    <div><div class="tavoli-grid" id="tavoli-grid"></div></div>
+    <div class="no-print">
+      <div class="unassigned-panel">
+        <div class="panel-header"><span>🪑 Non assegnati</span><span class="panel-badge" id="badge-non-assegnati">0</span></div>
+        <input class="panel-search" id="search-unassigned" type="text" placeholder="Cerca invitato..." oninput="renderUnassigned()" />
+        <div class="assign-hint">Tocca un ospite per assegnarlo a un tavolo (oppure trascinalo).</div>
+        <div class="unassigned-list" id="unassigned-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+`;function ne(M){const t=C=>M.querySelector(C),{uid:D,esc:_,toast:w}=J;let g={tavoli:[],tableOrder:[]};function S(){E.set("ds_tavoli",g),t("#last-saved").textContent=E.lastSavedLabel()}function j(){const C=E.get("ds_tavoli");C&&(g=C),g.tavoli||(g.tavoli=[]),g.tableOrder||(g.tableOrder=g.tavoli.map(n=>n.id)),T(),t("#last-saved").textContent=E.lastSavedLabel()}function T(){const C=new Set(B().map(a=>a.id));let n=0;g.tavoli.forEach(a=>{const d=(a.guestIds||[]).length;a.guestIds=(a.guestIds||[]).filter(e=>C.has(e)),n+=d-a.guestIds.length}),n>0&&(E.set("ds_tavoli",g),w(n+(n===1?" ospite non più confermato rimosso dai tavoli":" ospiti non più confermati rimossi dai tavoli")))}function B(){const C=E.get("ds_invitati");if(!C)return[];const n=[];return C.sposi&&C.sposi.guests&&C.sposi.guests.forEach(a=>{!a.formale&&a.status==="confermato"&&n.push({...a,sec:"sposi",groupName:"Sposi",groupId:"sposi"})}),["sposo","sposa","comuni"].forEach(a=>{C[a]&&C[a].groups.forEach(d=>d.guests.forEach(e=>{!e.formale&&e.status==="confermato"&&n.push({...e,sec:a,groupName:d.name,groupId:d.id})}))}),n}function v(){const C=new Set;return g.tavoli.forEach(n=>(n.guestIds||[]).forEach(a=>C.add(a))),C}function I(){const C=t("#add-form");C.classList.toggle("open"),C.classList.contains("open")&&t("#f-nome").focus()}function k(){const C=t("#f-nome").value.trim()||"Tavolo "+(g.tavoli.length+1),n=parseInt(t("#f-posti").value)||10,a={id:D(),nome:C,posti:n,guestIds:[]};g.tavoli.push(a),g.tableOrder.push(a.id),S(),z(),I(),t("#f-nome").value="",w('Tavolo "'+C+'" creato')}function L(C){confirm("Eliminare il tavolo? Gli ospiti torneranno non assegnati.")&&(g.tavoli=g.tavoli.filter(n=>n.id!==C),g.tableOrder=g.tableOrder.filter(n=>n!==C),S(),z(),w("Tavolo eliminato"))}function y(C,n){const a=g.tavoli.find(d=>d.id===C);a&&n.trim()&&(a.nome=n.trim(),S())}function G(C,n){const a=g.tavoli.find(d=>d.id===C);a&&(a.posti=parseInt(n)||1,S(),z())}function N(C,n){const a=g.tavoli.find(d=>d.id===C);a&&(a.guestIds=a.guestIds.filter(d=>d!==n),S(),z())}function f(C,n){g.tavoli.forEach(d=>{d.guestIds=(d.guestIds||[]).filter(e=>e!==n)});const a=g.tavoli.find(d=>d.id===C);if(a){if((a.guestIds||[]).length>=a.posti){w("Tavolo al completo!"),z();return}a.guestIds||(a.guestIds=[]),a.guestIds.push(n),S(),z()}}function F(){const C=B(),n=v(),a=g.tavoli.reduce((e,i)=>e+(i.posti||0),0);t("#s-tavoli").textContent=g.tavoli.length,t("#s-posti").textContent=a,t("#s-assegnati").textContent=n.size;const d=C.filter(e=>!n.has(e.id)).length;t("#s-non-assegnati").textContent=d,t("#badge-non-assegnati").textContent=d}function z(){A(),R(),F()}function A(){const C=t("#tavoli-grid");if(!g.tavoli.length){C.innerHTML='<div style="color:var(--muted);font-size:.9rem;padding:20px 0">Nessun tavolo creato. Clicca "+ Nuovo tavolo" per iniziare.</div>';return}const n=B(),a={};n.forEach(e=>a[e.id]=e),C.innerHTML="",g.tableOrder.map(e=>g.tavoli.find(i=>i.id===e)).filter(Boolean).forEach(e=>{const i=document.createElement("div");i.className="tavolo-card",i.dataset.tid=e.id;const l=(e.guestIds||[]).length,x=l>=e.posti,b=`${l}/${e.posti} posti`;i.innerHTML=`
+        <div class="tavolo-header">
+          <input class="tavolo-nome-input" value="${_(e.nome)}"
+            onblur="renameTavolo('${e.id}',this.value)"
+            onkeydown="if(event.key==='Enter')this.blur()" />
+          <input class="tavolo-posti-input" type="number" value="${e.posti}" min="1" max="50"
+            title="Numero posti"
+            onblur="resizeTavolo('${e.id}',this.value)"
+            onkeydown="if(event.key==='Enter')this.blur()" />
+          <span class="tavolo-posti ${x?"posti-full":""}">${b}</span>
+          <button class="btn btn-sm btn-danger" onclick="deleteTavolo('${e.id}')">✕</button>
+        </div>
+        <div class="tavolo-body" id="tbody-${e.id}"></div>`;const h=i.querySelector(`#tbody-${e.id}`);(e.guestIds||[]).length?(e.guestIds||[]).forEach($=>{const P=a[$];if(!P)return;const H=document.createElement("span");H.className="guest-chip",H.title="Tocca per spostare o rimuovere",H.innerHTML=`<span class="chip-tipo chip-${P.tipo}">${P.tipo[0].toUpperCase()}</span>${_(P.name)}<button class="chip-remove" onclick="event.stopPropagation();removeGuest('${e.id}','${$}')" title="Rimuovi">✕</button>`,H.addEventListener("click",()=>q($)),h.appendChild(H)}):h.innerHTML='<div class="tavolo-empty">Trascina gli ospiti qui</div>',i.addEventListener("dragover",$=>{$.preventDefault(),i.classList.add("drag-over")}),i.addEventListener("dragleave",()=>i.classList.remove("drag-over")),i.addEventListener("drop",$=>{$.preventDefault(),i.classList.remove("drag-over");const P=$.dataTransfer.getData("guestId");P&&f(e.id,P)}),C.appendChild(i)})}function R(){const C=B(),n=v(),a=(t("#search-unassigned").value||"").toLowerCase(),d=C.filter(l=>!n.has(l.id)&&l.name.toLowerCase().includes(a)),e=t("#unassigned-list");if(!d.length){e.innerHTML=`<div class="empty-panel">${C.length===0?"Nessun invitato confermato in Invitati":"Tutti assegnati ✓"}</div>`;return}const i=new Map;d.forEach(l=>{const x=l.groupId;i.has(x)||i.set(x,{name:l.groupName,sec:l.sec,guests:[]}),i.get(x).guests.push(l)}),e.innerHTML="",i.forEach(({name:l,sec:x,guests:b})=>{const h=document.createElement("div");h.className="panel-group-title",h.innerHTML=`<span>${_(l)} <span class="unc-sec sec-${x}" style="margin-left:4px">${x}</span></span><span class="panel-group-count">${b.length}</span>`,e.appendChild(h),b.forEach($=>{const P=document.createElement("div");P.className="unassigned-chip",P.draggable=!0,P.dataset.gid=$.id,P.innerHTML=`<span class="chip-tipo chip-${$.tipo}">${$.tipo[0].toUpperCase()}</span><span style="flex:1">${_($.name)}</span>`,P.addEventListener("dragstart",H=>{H.dataTransfer.setData("guestId",$.id),H.dataTransfer.effectAllowed="move"}),P.addEventListener("click",()=>q($.id)),e.appendChild(P)})})}function q(C){const n=B().find(x=>x.id===C);if(!n)return;let a=null;g.tavoli.forEach(x=>{(x.guestIds||[]).includes(C)&&(a=x.id)});const d=g.tableOrder.map(x=>g.tavoli.find(b=>b.id===x)).filter(Boolean),e=d.map(x=>{const b=(x.guestIds||[]).length,h=x.id===a,$=b>=x.posti&&!h;return`<button class="sheet-opt ${h?"current":""}" data-tid="${x.id}" ${$?"disabled":""}>
+        <span>${_(x.nome)}${h?" ✓":""}</span>
+        <span class="seats">${b}/${x.posti}${$?" · pieno":""}</span>
+      </button>`}).join(""),i=document.createElement("div");i.className="sheet-overlay",i.innerHTML=`
+      <div class="sheet" role="dialog" aria-modal="true">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">${_(n.name)}</div>
+        <div class="sheet-sub">${a?"Sposta in un altro tavolo o rimuovi":"Assegna a un tavolo"}</div>
+        ${d.length?e:'<div class="sheet-sub">Nessun tavolo creato.</div>'}
+        ${a?'<button class="sheet-opt danger" data-action="remove">Rimuovi dal tavolo</button>':""}
+        <button class="sheet-opt" data-action="cancel" style="justify-content:center">Annulla</button>
+      </div>`;const l=()=>i.remove();i.addEventListener("click",x=>{if(x.target===i)return l();const b=x.target.closest(".sheet-opt");if(!b)return;const h=b.dataset.action;if(h==="cancel")return l();if(h==="remove")return N(a,C),l();b.dataset.tid&&(f(b.dataset.tid,C),l())}),document.body.appendChild(i)}Object.assign(window,{toggleAddForm:I,addTavolo:k,deleteTavolo:L,renameTavolo:y,resizeTavolo:G,removeGuest:N,renderUnassigned:R}),j(),z();const U=C=>{C.detail.key==="ds_invitati"&&(T(),z()),C.detail.remote&&C.detail.key==="ds_tavoli"&&(j(),z())};return window.addEventListener("ds:change",U),()=>window.removeEventListener("ds:change",U)}const re=Object.freeze(Object.defineProperty({__proto__:null,html:ie,mount:ne,title:ae},Symbol.toStringTag,{value:"Module"})),se="Checklist – Day Special",le=`
+<style>
+  .progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .progress-title { font-weight: 700; font-size: 1rem; }
+  .progress-pct { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .stats-row { display: flex; gap: 20px; margin-top: 10px; flex-wrap: wrap; }
+  .stat-pill { font-size: .8rem; padding: 3px 12px; border-radius: 12px; font-weight: 600; }
+  .pill-todo { background: var(--border-soft); color: var(--muted); }
+  .pill-wip  { background: var(--accent-soft); color: var(--gold-txt); }
+  .pill-done { background: var(--success-soft); color: var(--success); }
+  .group-section { margin-bottom: 24px; }
+  .group-title { font-size: .8rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 8px 0 6px; border-bottom: 2px solid var(--border); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+  .item-list { display: flex; flex-direction: column; gap: 6px; }
+  .item { display: flex; align-items: center; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; box-shadow: var(--shadow); transition: border-color .15s, opacity .15s; animation: fadeUp .25s ease both; }
+  .item.done { opacity: .6; }
+  .item.done .item-titolo { text-decoration: line-through; color: var(--muted); }
+  .item-check { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+  .item-check.done { background: var(--success); border-color: var(--success); }
+  .item-check.wip  { background: var(--warning); border-color: var(--warning); }
+  .item-check::after { content: '✓'; color: #fff; font-size: .75rem; display: none; }
+  .item-check.done::after { display: block; }
+  .item-titolo { flex: 1; font-size: .9rem; font-weight: 500; }
+  .item-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .prio-badge { font-size: .7rem; padding: 2px 8px; border-radius: 8px; font-weight: 700; }
+  .prio-alta  { background: var(--danger-soft); color: var(--danger); }
+  .prio-media { background: var(--accent-soft); color: var(--gold-txt); }
+  .prio-bassa { background: var(--success-soft); color: var(--success); }
+  .cat-badge { font-size: .7rem; padding: 2px 8px; border-radius: 8px; font-weight: 600; background: var(--border-soft); color: var(--muted); }
+  .scadenza-badge { font-size: .72rem; color: var(--muted); }
+  .scadenza-badge.past { color: var(--danger); font-weight: 700; }
+  .item-note { font-size: .78rem; color: var(--muted); max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-actions { display: flex; gap: 5px; opacity: 0; transition: opacity .15s; }
+  .item:hover .item-actions { opacity: 1; }
+  @media (max-width: 600px) {
+    .item { flex-wrap: wrap; }
+    .item-titolo { flex-basis: calc(100% - 36px); }
+    .item-note { max-width: 100%; flex-basis: 100%; white-space: normal; }
+    .item-meta { order: 4; }
+    .item-actions { order: 5; margin-left: auto; opacity: 1; }
+  }
+</style>
+<header>
+  <a class="nav-back" href="#/">← Home</a>
+  <h1>Day <span>Special</span> — Checklist</h1>
+  <div class="header-actions">
+    <span class="lbl-saved" id="last-saved"></span>
+    <button class="btn btn-ghost btn-sm" onclick="window.print()" title="Stampa la checklist">🖨 Stampa</button>
+    <button class="icon-btn" id="theme-toggle">🌙</button>
+  </div>
+</header>
+<div class="container container--narrow">
+  <details class="collapsible">
+    <summary>📊 Progresso generale <span class="progress-pct" id="pct" style="margin-left:auto">0%</span></summary>
+    <div class="progress-wrap collapse-inner">
+      <div class="progress-bar"><div class="progress-fill" id="bar-fill" style="width:0%"></div></div>
+      <div class="stats-row">
+        <span class="stat-pill pill-todo" id="s-todo">0 da fare</span>
+        <span class="stat-pill pill-wip"  id="s-wip">0 in corso</span>
+        <span class="stat-pill pill-done" id="s-done">0 completate</span>
+      </div>
+    </div>
+  </details>
+  <div class="toolbar">
+    <button class="btn btn-primary" onclick="openForm()">+ Aggiungi attività</button>
+    <input class="search-input" type="text" id="search" placeholder="Cerca attività..." oninput="renderList()" />
+    <select class="filter-select" id="filter-cat" onchange="renderList()"><option value="">Tutte le categorie</option></select>
+    <select class="filter-select" id="filter-prio" onchange="renderList()">
+      <option value="">Tutte le priorità</option>
+      <option value="alta">Alta</option>
+      <option value="media">Media</option>
+      <option value="bassa">Bassa</option>
+    </select>
+    <select class="filter-select" id="filter-stato" onchange="renderList()">
+      <option value="">Tutti gli stati</option>
+      <option value="todo">Da fare</option>
+      <option value="wip">In corso</option>
+      <option value="done">Completate</option>
+    </select>
+    <select class="filter-select" id="sort-by" onchange="renderList()" title="Ordinamento all'interno di ogni fase">
+      <option value="manuale">Ordine di inserimento</option>
+      <option value="priorita">Per priorità</option>
+      <option value="scadenza">Per scadenza</option>
+    </select>
+    <button class="btn btn-ghost" onclick="addDefaults()">📋 Template base</button>
+  </div>
+  <div class="add-form" id="add-form">
+    <h3 id="form-title">Nuova attività</h3>
+    <div class="form-grid">
+      <div class="form-group full"><label>Titolo *</label><input type="text" id="f-titolo" placeholder="Es. Prenotare la chiesa" /></div>
+      <div class="form-group">
+        <label>Fase temporale</label>
+        <select id="f-fase">
+          <option value="10/12 mesi prima">10/12 mesi prima</option>
+          <option value="7/9 mesi prima">7/9 mesi prima</option>
+          <option value="4/6 mesi prima">4/6 mesi prima</option>
+          <option value="2/3 mesi prima">2/3 mesi prima</option>
+          <option value="1 mese prima">1 mese prima</option>
+          <option value="2 settimane prima">2 settimane prima</option>
+          <option value="L'ultima settimana">L'ultima settimana</option>
+          <option value="L'ultimo giorno">L'ultimo giorno</option>
+          <option value="Dopo il matrimonio">Dopo il matrimonio</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Categoria</label>
+        <select id="f-categoria">
+          <option>Pianificazione</option><option>Cerimonia</option><option>Banchetto</option>
+          <option>Fotografia e video</option><option>Musica</option><option>Partecipazioni</option>
+          <option>Luna di miele</option><option>Sposa e accessori</option><option>Sposo e accessori</option>
+          <option>Fiori e decorazioni</option><option>Bomboniere</option><option>Gioielleria</option>
+          <option>Bellezza e benessere</option><option>Trasporti</option><option>Pratiche burocratiche</option>
+          <option>Lista nozze</option><option>Altro</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Priorità</label>
+        <select id="f-priorita">
+          <option value="alta">Alta</option>
+          <option value="media" selected>Media</option>
+          <option value="bassa">Bassa</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Stato</label>
+        <select id="f-stato">
+          <option value="todo">Da fare</option>
+          <option value="wip">In corso</option>
+          <option value="done">Completata</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Scadenza</label><input type="date" id="f-scadenza" /></div>
+      <div class="form-group full"><label>Note</label><textarea id="f-note" placeholder="Dettagli, contatti, link..."></textarea></div>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="saveItem()">Salva</button>
+      <button class="btn btn-ghost" onclick="closeForm()">Annulla</button>
+    </div>
+  </div>
+  <div id="list-wrap"></div>
+</div>
+<div id="toast"></div>
+`,ht=[{titolo:"Fissare una data approssimativa 🗓️",fase:"10/12 mesi prima",categoria:"Pianificazione",priorita:"media",stato:"done"},{titolo:"Da soli o con l'aiuto di un wedding planner?",fase:"10/12 mesi prima",categoria:"Pianificazione",priorita:"media",stato:"done"},{titolo:"Chi invitiamo? 💌",fase:"10/12 mesi prima",categoria:"Pianificazione",priorita:"media",stato:"done"},{titolo:"Informare delle nozze 📣",fase:"10/12 mesi prima",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Quanto spenderemo? 💰",fase:"10/12 mesi prima",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Scegliere il luogo della cerimonia 🏰",fase:"10/12 mesi prima",categoria:"Cerimonia",priorita:"media",stato:"todo"},{titolo:"Confermare giorno e ora della cerimonia",fase:"10/12 mesi prima",categoria:"Cerimonia",priorita:"media",stato:"todo"},{titolo:"Come sarà il ricevimento di nozze? 🍾",fase:"10/12 mesi prima",categoria:"Banchetto",priorita:"media",stato:"todo"},{titolo:"Prenotare la location per il ricevimento 🍽️",fase:"10/12 mesi prima",categoria:"Banchetto",priorita:"alta",stato:"todo"},{titolo:"Prenotare il catering 🍝",fase:"10/12 mesi prima",categoria:"Banchetto",priorita:"alta",stato:"todo"},{titolo:"Organizzare i tavoli degli invitati 👪",fase:"10/12 mesi prima",categoria:"Banchetto",priorita:"media",stato:"todo"},{titolo:"Cercare il fotografo 📷",fase:"10/12 mesi prima",categoria:"Fotografia e video",priorita:"media",stato:"todo"},{titolo:"Scegliere a chi affidare la musica della cerimonia 🎻",fase:"10/12 mesi prima",categoria:"Musica",priorita:"media",stato:"todo"},{titolo:"Scegliere la musica per il ricevimento 💿",fase:"10/12 mesi prima",categoria:"Musica",priorita:"media",stato:"todo"},{titolo:"Pensare ad attività e animazione per gli invitati 🎉",fase:"10/12 mesi prima",categoria:"Banchetto",priorita:"media",stato:"todo"},{titolo:"Invitati che arrivano da lontano? Aiutateli a cercare un hotel 🏨",fase:"10/12 mesi prima",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Scegliere il fotografo 📷",fase:"10/12 mesi prima",categoria:"Fotografia e video",priorita:"alta",stato:"todo"},{titolo:"Ingaggiare i musicisti 💃",fase:"10/12 mesi prima",categoria:"Musica",priorita:"alta",stato:"todo"},{titolo:"Ordinare i Save the date",fase:"10/12 mesi prima",categoria:"Partecipazioni",priorita:"media",stato:"todo"},{titolo:"Cercare destinazioni per la luna di miele! 🏖️",fase:"10/12 mesi prima",categoria:"Luna di miele",priorita:"media",stato:"todo"},{titolo:"Cominciare a guardare gli abiti da sposa 👰🏻",fase:"7/9 mesi prima",categoria:"Sposa e accessori",priorita:"media",stato:"todo"},{titolo:"Comunicare la notizia al lavoro 📣",fase:"7/9 mesi prima",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Sbrigare le pratiche per il matrimonio civile",fase:"7/9 mesi prima",categoria:"Pratiche burocratiche",priorita:"alta",stato:"todo"},{titolo:"Sbrigare le pratiche per il matrimonio religioso",fase:"7/9 mesi prima",categoria:"Pratiche burocratiche",priorita:"alta",stato:"todo"},{titolo:"Scegliere fiori e decorazioni di nozze 🌸🌼",fase:"7/9 mesi prima",categoria:"Fiori e decorazioni",priorita:"media",stato:"todo"},{titolo:"Pensare a qualche decorazione fatta a mano",fase:"7/9 mesi prima",categoria:"Bomboniere",priorita:"media",stato:"todo"},{titolo:"Valutare i vari stili di bouquet 💐",fase:"7/9 mesi prima",categoria:"Fiori e decorazioni",priorita:"media",stato:"todo"},{titolo:"Iniziare a pensare alle fedi! 💍",fase:"7/9 mesi prima",categoria:"Gioielleria",priorita:"media",stato:"todo"},{titolo:"Prendere appuntamento per provare abiti da sposa 👰",fase:"7/9 mesi prima",categoria:"Sposa e accessori",priorita:"media",stato:"todo"},{titolo:"Scegliere se affittare o comprare l'abito da sposa",fase:"7/9 mesi prima",categoria:"Sposa e accessori",priorita:"media",stato:"todo"},{titolo:"Fare il punto della situazione",fase:"7/9 mesi prima",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Acquistare l'abito da sposa! 👰",fase:"7/9 mesi prima",categoria:"Sposa e accessori",priorita:"alta",stato:"todo"},{titolo:"Iniziare le prove dell'abito da sposa",fase:"7/9 mesi prima",categoria:"Sposa e accessori",priorita:"media",stato:"todo"},{titolo:"Visitare agenzie per la luna di miele! ✈️",fase:"7/9 mesi prima",categoria:"Luna di miele",priorita:"media",stato:"todo"},{titolo:"Inviare i Save the date",fase:"7/9 mesi prima",categoria:"Partecipazioni",priorita:"media",stato:"todo"},{titolo:"Cercare le partecipazioni di nozze! 💌",fase:"4/6 mesi prima",categoria:"Partecipazioni",priorita:"media",stato:"todo"},{titolo:"Scegliere testimoni e damigelle d'onore",fase:"4/6 mesi prima",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Prenotare fiori e decorazioni 🌼",fase:"4/6 mesi prima",categoria:"Fiori e decorazioni",priorita:"alta",stato:"todo"},{titolo:"Prenotare la luna di miele! ✈️",fase:"4/6 mesi prima",categoria:"Lista nozze",priorita:"alta",stato:"todo"},{titolo:"Preparare i documenti e terminare le pratiche per il viaggio",fase:"4/6 mesi prima",categoria:"Luna di miele",priorita:"media",stato:"todo"},{titolo:"Ordinare le partecipazioni!",fase:"4/6 mesi prima",categoria:"Partecipazioni",priorita:"alta",stato:"todo"},{titolo:"Controllare la lista degli invitati e gli indirizzi!",fase:"4/6 mesi prima",categoria:"Partecipazioni",priorita:"media",stato:"todo"},{titolo:"Scegliere la vettura per gli sposi 🚘",fase:"4/6 mesi prima",categoria:"Trasporti",priorita:"media",stato:"todo"},{titolo:"Come arriveranno gli invitati? 🚌",fase:"4/6 mesi prima",categoria:"Trasporti",priorita:"alta",stato:"todo"},{titolo:"Cominciare a guardare acconciature da sposa 👱‍♀️",fase:"4/6 mesi prima",categoria:"Bellezza e benessere",priorita:"media",stato:"todo"},{titolo:"Scegliere il regime patrimoniale",fase:"4/6 mesi prima",categoria:"Pratiche burocratiche",priorita:"media",stato:"todo"},{titolo:"Ritirare e consegnare le partecipazioni 📫",fase:"4/6 mesi prima",categoria:"Partecipazioni",priorita:"media",stato:"todo"},{titolo:"Guardare vestiti da sposo",fase:"4/6 mesi prima",categoria:"Sposo e accessori",priorita:"media",stato:"todo"},{titolo:"Organizzare la festa per le pubblicazioni o promessa",fase:"4/6 mesi prima",categoria:"Altro",priorita:"media",stato:"todo"},{titolo:"Scegliere i regali per la promessa 💍⌚",fase:"4/6 mesi prima",categoria:"Altro",priorita:"media",stato:"todo"},{titolo:"Acquistare l'abito da sposo 🤵",fase:"4/6 mesi prima",categoria:"Sposo e accessori",priorita:"alta",stato:"todo"},{titolo:"Scegliere gli accessori per lo sposo 👞",fase:"4/6 mesi prima",categoria:"Sposo e accessori",priorita:"media",stato:"todo"},{titolo:"Creare il sito web del matrimonio 💻",fase:"4/6 mesi prima",categoria:"Altro",priorita:"media",stato:"todo"},{titolo:"Scegliere il menù per il ricevimento 🍽",fase:"4/6 mesi prima",categoria:"Banchetto",priorita:"media",stato:"todo"},{titolo:"Scegliere la torta nuziale 🍰",fase:"4/6 mesi prima",categoria:"Banchetto",priorita:"media",stato:"todo"},{titolo:"Scegliere gli accessori della sposa 👛",fase:"2/3 mesi prima",categoria:"Sposa e accessori",priorita:"alta",stato:"todo"},{titolo:"Scegliere le scarpe da sposa 👠",fase:"2/3 mesi prima",categoria:"Sposa e accessori",priorita:"media",stato:"todo"},{titolo:"Cercare l'intimo per la sposa 👙",fase:"2/3 mesi prima",categoria:"Sposa e accessori",priorita:"media",stato:"todo"},{titolo:"Velo: sì o no? 👰",fase:"2/3 mesi prima",categoria:"Sposa e accessori",priorita:"media",stato:"todo"},{titolo:"Acquistare le fedi e scegliere la frase da incidere",fase:"2/3 mesi prima",categoria:"Gioielleria",priorita:"alta",stato:"todo"},{titolo:"Scegliere le letture per la cerimonia 📖",fase:"2/3 mesi prima",categoria:"Cerimonia",priorita:"media",stato:"todo"},{titolo:"Scegliere decorazione e animazione per la festa",fase:"2/3 mesi prima",categoria:"Fiori e decorazioni",priorita:"media",stato:"todo"},{titolo:"Cercare le bomboniere",fase:"2/3 mesi prima",categoria:"Bomboniere",priorita:"media",stato:"todo"},{titolo:"Prenotare l'auto degli sposi 🚘",fase:"2/3 mesi prima",categoria:"Trasporti",priorita:"alta",stato:"todo"},{titolo:"Prenotare l'hotel per la prima notte di nozze 🏩",fase:"2/3 mesi prima",categoria:"Altro",priorita:"media",stato:"todo"},{titolo:"Scegliere il make up artist 💄",fase:"2/3 mesi prima",categoria:"Bellezza e benessere",priorita:"alta",stato:"todo"},{titolo:"Scegliere gli abiti per damigelle d'onore e paggetti",fase:"2/3 mesi prima",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Acquistare le bomboniere per gli invitati",fase:"2/3 mesi prima",categoria:"Bomboniere",priorita:"alta",stato:"todo"},{titolo:"Cercare i regali per gli invitati speciali 👵👴🏻",fase:"2/3 mesi prima",categoria:"Bomboniere",priorita:"media",stato:"todo"},{titolo:"Prendere appuntamenti per prove di trucco e acconciatura",fase:"2/3 mesi prima",categoria:"Bellezza e benessere",priorita:"media",stato:"todo"},{titolo:"Prendere appuntamento in un centro estetico",fase:"2/3 mesi prima",categoria:"Bellezza e benessere",priorita:"media",stato:"todo"},{titolo:"Controllare i menù",fase:"2/3 mesi prima",categoria:"Banchetto",priorita:"media",stato:"todo"},{titolo:"Addio al nubilato/celibato 🎉",fase:"2/3 mesi prima",categoria:"Altro",priorita:"media",stato:"todo"},{titolo:"Definire il programma e chiarire i dubbi sulla cerimonia 📔",fase:"2/3 mesi prima",categoria:"Cerimonia",priorita:"media",stato:"todo"},{titolo:"Informare del programma i partecipanti alla cerimonia",fase:"2/3 mesi prima",categoria:"Cerimonia",priorita:"media",stato:"todo"},{titolo:"Scegliere il bouquet e dare conferma al fiorista! 💐",fase:"2/3 mesi prima",categoria:"Fiori e decorazioni",priorita:"alta",stato:"todo"},{titolo:"Ritirare le fedi",fase:"2/3 mesi prima",categoria:"Gioielleria",priorita:"media",stato:"todo"},{titolo:"Quale sarà la colonna sonora delle vostre nozze? 🎶",fase:"2/3 mesi prima",categoria:"Musica",priorita:"media",stato:"todo"},{titolo:"Chiudere la lista degli invitati",fase:"1 mese prima",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Controllare la disposizione dei tavoli",fase:"1 mese prima",categoria:"Banchetto",priorita:"media",stato:"todo"},{titolo:"Consegnare al ristorante la piantina con la disposizione dei tavoli",fase:"1 mese prima",categoria:"Banchetto",priorita:"media",stato:"todo"},{titolo:"Dare le ultime istruzioni agli invitati",fase:"1 mese prima",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Ultima prova dell'abito da sposa 👰",fase:"1 mese prima",categoria:"Sposa e accessori",priorita:"media",stato:"todo"},{titolo:"Ultima prova del vestito da sposo 🤵",fase:"1 mese prima",categoria:"Sposo e accessori",priorita:"media",stato:"todo"},{titolo:"Organizzare l'album di nozze condiviso 📱",fase:"1 mese prima",categoria:"Fotografia e video",priorita:"media",stato:"todo"},{titolo:"Definire gli ultimi dettagli per la luna di miele",fase:"1 mese prima",categoria:"Luna di miele",priorita:"media",stato:"todo"},{titolo:"Prendere appuntamento dal barbiere 💇‍♂️",fase:"2 settimane prima",categoria:"Bellezza e benessere",priorita:"media",stato:"todo"},{titolo:"Ultima visita al centro estetico 💅",fase:"2 settimane prima",categoria:"Bellezza e benessere",priorita:"media",stato:"todo"},{titolo:"Ritirare gli abiti",fase:"L'ultima settimana",categoria:"Sposa e accessori",priorita:"media",stato:"todo"},{titolo:"Dare un ultimo sguardo alla lista degli invitati 🤞",fase:"L'ultima settimana",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Assicurarsi che tutto sia sotto controllo",fase:"L'ultima settimana",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Preparare le valigie e il kit d'emergenza",fase:"L'ultima settimana",categoria:"Luna di miele",priorita:"media",stato:"todo"},{titolo:"Condividere con gli invitati l'app per le foto 📸",fase:"L'ultima settimana",categoria:"Pianificazione",priorita:"media",stato:"todo"},{titolo:"Ritirare il bouquet",fase:"L'ultimo giorno",categoria:"Fiori e decorazioni",priorita:"media",stato:"todo"},{titolo:"Prendersi un po' di tempo per rilassarsi 💆",fase:"L'ultimo giorno",categoria:"Bellezza e benessere",priorita:"media",stato:"todo"},{titolo:"Ritirare/scaricare l'album di nozze",fase:"Dopo il matrimonio",categoria:"Fotografia e video",priorita:"media",stato:"todo"},{titolo:"Recensire i fornitori delle vostre nozze ⭐",fase:"Dopo il matrimonio",categoria:"Altro",priorita:"media",stato:"todo"},{titolo:"Preparare un biglietto o un video di ringraziamento per gli invitati ✍️",fase:"Dopo il matrimonio",categoria:"Partecipazioni",priorita:"media",stato:"todo"}];function de(M){const t=a=>M.querySelector(a),{uid:D,esc:_,toast:w}=J;let g={items:[]},S=null;function j(){E.set("ds_checklist",g),t("#last-saved").textContent=E.lastSavedLabel()}function T(){const a=E.get("ds_checklist");a&&(g=a),g.items||(g.items=[]),a===null&&(g.items=ht.map(d=>({...d,id:D(),scadenza:"",note:""})),E.applyRemote("ds_checklist",g,"1970-01-01T00:00:00.000Z")),t("#last-saved").textContent=E.lastSavedLabel()}function B(){const a=g.items.length,d=g.items.filter(x=>x.stato==="done").length,e=g.items.filter(x=>x.stato==="wip").length,i=a-d-e,l=a>0?Math.round(d/a*100):0;t("#pct").textContent=l+"%",t("#bar-fill").style.width=l+"%",t("#s-todo").textContent=i+" da fare",t("#s-wip").textContent=e+" in corso",t("#s-done").textContent=d+" completate"}function v(){const a=[...new Set(g.items.map(i=>i.categoria))].sort(),d=t("#filter-cat"),e=d.value;d.innerHTML='<option value="">Tutte le categorie</option>',a.forEach(i=>{const l=document.createElement("option");l.value=i,l.textContent=i,d.appendChild(l)}),d.value=e}const I={alta:0,media:1,bassa:2},k=["10/12 mesi prima","7/9 mesi prima","4/6 mesi prima","2/3 mesi prima","1 mese prima","2 settimane prima","L'ultima settimana","L'ultimo giorno","Dopo il matrimonio"],L="Senza fase";function y(a){const d=k.indexOf(a);return d<0?k.length:d}function G(a){const d=t("#sort-by").value;return d==="priorita"?[...a].sort((e,i)=>(I[e.priorita]??9)-(I[i.priorita]??9)):d==="scadenza"?[...a].sort((e,i)=>(e.scadenza||"9999")<(i.scadenza||"9999")?-1:1):a}function N(){const a=(t("#search").value||"").toLowerCase(),d=t("#filter-cat").value,e=t("#filter-prio").value,i=t("#filter-stato").value;let l=g.items;a&&(l=l.filter(h=>h.titolo.toLowerCase().includes(a)||(h.note||"").toLowerCase().includes(a))),d&&(l=l.filter(h=>h.categoria===d)),e&&(l=l.filter(h=>h.priorita===e)),i&&(l=l.filter(h=>h.stato===i));const x=t("#list-wrap");if(!l.length){x.innerHTML='<div class="empty-state">Nessuna attività trovata. Clicca "+ Aggiungi attività" per iniziare.</div>',v(),B();return}const b={};l.forEach(h=>{const $=h.fase||L;(b[$]=b[$]||[]).push(h)}),x.innerHTML="",Object.entries(b).sort(([h],[$])=>y(h)-y($)).forEach(([h,$])=>{const P=document.createElement("div");P.className="group-section";const H=$.filter(Q=>Q.stato==="done").length;P.innerHTML=`<div class="group-title"><span>${_(h)}</span><span style="font-weight:400">${H}/${$.length}</span></div><div class="item-list"></div>`,x.appendChild(P);const K=P.querySelector(".item-list");G($).forEach(Q=>K.appendChild(f(Q)))}),v(),B()}function f(a){const d=document.createElement("div");d.className="item"+(a.stato==="done"?" done":""),d.dataset.iid=a.id;const e=new Date().toISOString().slice(0,10),i=a.scadenza&&a.scadenza<e&&a.stato!=="done",l=a.scadenza?`<span class="scadenza-badge${i?" past":""}">📅 ${a.scadenza}</span>`:"";return d.innerHTML=`
+      <div class="item-check ${a.stato==="done"?"done":a.stato==="wip"?"wip":""}" onclick="cycleStato('${a.id}',this)" title="Clicca per cambiare stato"></div>
+      <div class="item-titolo">${_(a.titolo)}</div>
+      <div class="item-meta">
+        ${a.categoria?`<span class="cat-badge">${_(a.categoria)}</span>`:""}
+        <span class="prio-badge prio-${a.priorita}">${a.priorita}</span>
+        ${l}
+      </div>
+      ${a.note?`<div class="item-note" title="${_(a.note)}">${_(a.note)}</div>`:""}
+      <div class="item-actions">
+        <button class="btn btn-sm btn-ghost" onclick="editItem('${a.id}')">✏️</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteItem('${a.id}')">✕</button>
+      </div>`,d}function F(a,d){const e=g.items.find(l=>l.id===a);if(!e)return;const i={todo:"wip",wip:"done",done:"todo"};e.stato=i[e.stato]||"todo",j(),N()}function z(a){S=a?a.id:null,t("#form-title").textContent=S?"Modifica attività":"Nuova attività",t("#f-titolo").value=a?.titolo||"",t("#f-fase").value=a?.fase||"10/12 mesi prima",t("#f-categoria").value=a?.categoria||"Altro",t("#f-priorita").value=a?.priorita||"media",t("#f-stato").value=a?.stato||"todo",t("#f-scadenza").value=a?.scadenza||"",t("#f-note").value=a?.note||"",t("#add-form").classList.add("open"),t("#f-titolo").focus()}function A(){t("#add-form").classList.remove("open"),S=null}function R(){const a=t("#f-titolo").value.trim();if(!a){w("Inserisci il titolo");return}const d=!!S,e={id:S||D(),titolo:a,fase:t("#f-fase").value,categoria:t("#f-categoria").value,priorita:t("#f-priorita").value,stato:t("#f-stato").value,scadenza:t("#f-scadenza").value,note:t("#f-note").value.trim()};if(d){const i=g.items.findIndex(l=>l.id===S);i>=0&&(g.items[i]=e)}else g.items.push(e);j(),A(),N(),w(d?"Attività aggiornata":"Attività aggiunta")}function q(a){z(g.items.find(d=>d.id===a))}function U(a){confirm("Eliminare questa attività?")&&(g.items=g.items.filter(d=>d.id!==a),j(),N(),w("Attività eliminata"))}function C(){if(!confirm("Aggiungere il template con le attività più comuni? Le attività esistenti non verranno eliminate."))return;const a=new Set(g.items.map(e=>e.titolo));let d=0;ht.forEach(e=>{a.has(e.titolo)||(g.items.push({...e,id:D(),scadenza:"",note:""}),d++)}),j(),N(),w(d+" attività aggiunte dal template")}Object.assign(window,{openForm:z,closeForm:A,saveItem:R,editItem:q,deleteItem:U,cycleStato:F,addDefaults:C,renderList:N}),T(),N();const n=a=>{a.detail.remote&&a.detail.key==="ds_checklist"&&(T(),N())};return window.addEventListener("ds:change",n),()=>window.removeEventListener("ds:change",n)}const ce=Object.freeze(Object.defineProperty({__proto__:null,html:le,mount:de,title:se},Symbol.toStringTag,{value:"Module"})),pe={"":yt,invitati:Ht,budget:Yt,fornitori:Wt,programma:oe,tavoli:re,checklist:ce};let lt=null;function ue(){return location.hash.replace(/^#\/?/,"")}function xt(){if(lt){try{lt()}catch(D){console.error(D)}lt=null}const M=pe[ue()]||yt,t=document.getElementById("app");t.innerHTML=M.html,document.title=M.title||"Day Special",lt=M.mount(t)||null,J.initPage(),ut.onViewMounted(),window.scrollTo(0,0)}function ve(){window.addEventListener("hashchange",xt),xt()}ve();ut.init();</script>
+  <style rel="stylesheet" crossorigin>*,*:before,*:after{box-sizing:border-box;margin:0;padding:0}:root{--bg: #faf7f4;--surface: #ffffff;--surface-2: #fdf9f5;--border: #e8e0d8;--border-soft: #f0ebe4;--accent: #c9a96e;--accent-dk: #a8845a;--accent-soft: #fef3e2;--accent-line: #f5d9a0;--text: #3a3028;--muted: #8a7968;--danger: #c0392b;--danger-soft: #fdecea;--success: #27ae60;--success-soft: #eafaf1;--info: #2980b9;--info-soft: #e8f4fd;--warning: #e67e22;--warning-soft: #fff5e6;--gold-txt: #b7860b;--gold-soft: #fef9e7;--purple: #8e44ad;--purple-soft: #fdf2f8;--teal: #16a085;--teal-soft: #e8f8f5;--radius: 12px;--shadow: 0 2px 12px rgba(58, 48, 40, .07);--shadow-lg: 0 8px 28px rgba(58, 48, 40, .13);--font-serif: Georgia, "Times New Roman", serif}[data-theme=dark]{--bg: #1c1815;--surface: #262120;--surface-2: #2d2724;--border: #3d352e;--border-soft: #342d28;--accent: #d4b277;--accent-dk: #e3c48e;--accent-soft: #3a3022;--accent-line: #5a4a2e;--text: #ece5dc;--muted: #a3958a;--danger: #e2685a;--danger-soft: #3a2522;--success: #4cc97f;--success-soft: #20352a;--info: #6cb6e8;--info-soft: #20303d;--warning: #f0944a;--warning-soft: #3a2f20;--gold-txt: #e0b54a;--gold-soft: #3a3320;--purple: #c98ae0;--purple-soft: #342438;--teal: #4ecbb0;--teal-soft: #1e352f;--shadow: 0 2px 12px rgba(0, 0, 0, .35);--shadow-lg: 0 8px 28px rgba(0, 0, 0, .5)}html{color-scheme:light}[data-theme=dark]{color-scheme:dark}body{font-family:Segoe UI,system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .25s,color .25s}header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 32px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:50}header h1{font-family:var(--font-serif);font-size:1.45rem;font-weight:700;letter-spacing:.01em}header h1 span{color:var(--accent)}.nav-back{text-decoration:none;color:var(--muted);font-size:.9rem;white-space:nowrap;transition:color .15s}.nav-back:hover{color:var(--accent)}.header-actions{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.lbl-saved{font-size:.78rem;color:var(--muted)}.icon-btn{background:transparent;border:1px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:1rem;cursor:pointer;color:var(--text);display:inline-flex;align-items:center;justify-content:center;transition:border-color .15s,transform .15s}.icon-btn:hover{border-color:var(--accent);transform:translateY(-1px)}.menu-toggle{display:none}.container{max-width:1200px;margin:0 auto;padding:28px 24px}.container--narrow{max-width:900px}.container--wide{max-width:1400px}.btn{padding:9px 18px;border:none;border-radius:8px;cursor:pointer;font-size:.88rem;font-weight:600;font-family:inherit;transition:background .15s,color .15s,border-color .15s,transform .12s,box-shadow .15s}.btn:active{transform:scale(.97)}.btn-primary{background:var(--accent);color:#fff;box-shadow:0 2px 8px #c9a96e59}.btn-primary:hover{background:var(--accent-dk)}[data-theme=dark] .btn-primary{color:#1c1815}.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-ghost:hover{border-color:var(--accent);color:var(--accent)}.btn-sm{padding:5px 11px;font-size:.8rem}.btn-danger{background:var(--danger-soft);color:var(--danger);border:none}.btn-danger:hover{background:var(--danger);color:#fff}.toolbar{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center}.filter-select{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:.88rem;background:var(--surface);color:var(--text);cursor:pointer;font-family:inherit}.filter-select:focus{outline:none;border-color:var(--accent)}.search-input{flex:1;min-width:160px;padding:8px 14px;border:1px solid var(--border);border-radius:8px;font-size:.9rem;background:var(--surface);color:var(--text);font-family:inherit}.search-input:focus{outline:none;border-color:var(--accent)}.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:28px}.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;text-align:center;box-shadow:var(--shadow);animation:fadeUp .35s ease both}.stat-card .val{font-size:1.7rem;font-weight:700;color:var(--accent);line-height:1.15;font-variant-numeric:tabular-nums}.stat-card .lbl{font-size:.73rem;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.05em}.stat-card.danger .val{color:var(--danger)}.stat-card.success .val{color:var(--success)}.stat-card.warn .val{color:var(--warning)}.summary-group{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;animation:fadeUp .35s ease both}.summary-group-title{font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:10px 18px 8px;border-bottom:1px solid var(--border);background:var(--surface-2)}.summary-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0}.summary-cards .stat-card{border:none;border-right:1px solid var(--border);border-radius:0;box-shadow:none;animation:none}.summary-cards .stat-card:last-child{border-right:none}details.collapsible{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:20px;overflow:hidden}details.collapsible>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;font-size:.95rem;font-weight:600;padding:14px 20px;user-select:none;color:var(--text)}details.collapsible>summary::-webkit-details-marker{display:none}details.collapsible>summary:after{content:"▸";margin-left:auto;color:var(--muted);transition:transform .2s}details.collapsible[open]>summary:after{transform:rotate(90deg)}details.collapsible>summary:hover{color:var(--accent)}details.collapsible[open]>summary{border-bottom:1px solid var(--border)}details.collapsible>:not(summary){padding:18px 20px}details.collapsible .summary{margin-bottom:0}details.collapsible .collapse-inner{margin:0;border:none;box-shadow:none;padding:0;background:transparent}.add-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:20px;box-shadow:var(--shadow);display:none}.add-form.open{display:block;animation:fadeUp .25s ease}.add-form h3{font-size:.95rem;font-weight:600;margin-bottom:14px}.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}.form-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.form-group{display:flex;flex-direction:column;gap:4px}.form-group label{font-size:.78rem;color:var(--muted);font-weight:500}.form-group input,.form-group select,.form-group textarea{padding:8px 12px;border:1px solid var(--border);border-radius:8px;font-size:.9rem;font-family:inherit;background:var(--surface);color:var(--text)}.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent)}.form-group textarea{resize:vertical;min-height:58px}.form-group.full{grid-column:1 / -1}.form-actions{margin-top:14px;display:flex;gap:10px}.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;overflow-x:auto}table{width:100%;border-collapse:collapse}thead th{background:var(--surface-2);padding:10px 14px;text-align:left;font-size:.76rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap}tbody tr{border-bottom:1px solid var(--border-soft);transition:background .12s}tbody tr:last-child{border-bottom:none}tbody tr:hover{background:var(--surface-2)}td{padding:10px 14px;font-size:.9rem;vertical-align:middle}.inline-input{border:none;background:transparent;font-size:.9rem;width:100%;outline:none;border-bottom:1px dashed transparent;color:var(--text);font-family:inherit}.inline-input:focus{border-bottom-color:var(--accent)}.inline-num{width:90px;text-align:right;font-variant-numeric:tabular-nums}.status-select,.stato-select{font-size:.78rem;padding:4px 8px;border:1px solid var(--border);border-radius:8px;cursor:pointer;background:var(--surface);color:var(--text);font-family:inherit}.status-select:focus,.stato-select:focus{outline:none;border-color:var(--accent)}.progress-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 24px;margin-bottom:24px;box-shadow:var(--shadow)}.progress-label{display:flex;justify-content:space-between;font-size:.82rem;color:var(--muted);margin-bottom:8px}.progress-bar{height:12px;background:var(--border-soft);border-radius:6px;overflow:hidden}.progress-fill{height:100%;border-radius:6px;transition:width .4s;background:var(--accent)}.progress-fill.over{background:var(--danger)}.empty-state{text-align:center;color:var(--muted);padding:48px 20px;font-size:.9rem}.badge{display:inline-block;font-size:.72rem;padding:2px 9px;border-radius:10px;font-weight:600;white-space:nowrap}#toast{position:fixed;bottom:24px;right:24px;background:var(--text);color:var(--bg);padding:10px 18px;border-radius:10px;font-size:.88rem;opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;transform:translateY(8px);z-index:999;box-shadow:var(--shadow-lg);max-width:min(420px,80vw)}#toast.show{opacity:1;transform:translateY(0)}@keyframes fadeUp{0%{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}:focus-visible{outline:2px solid var(--accent);outline-offset:2px}@media print{body{background:#fff;color:#000}header{position:static}.no-print,.header-actions,.menu-toggle,.toolbar,.add-form,.nav-back,.item-actions,.event-actions,.card-actions,.btn,.icon-btn,#toast{display:none!important}.stat-card,.summary-group,.table-wrap,.family-group,.fornitore-card,.tavolo-card,.event-card,.item{box-shadow:none!important;break-inside:avoid}.container{max-width:none;padding:0}}@media (hover: none){.event-actions,.item-actions,.card-actions{opacity:1!important}}@media (max-width: 600px){header{padding:10px 14px;flex-wrap:wrap;gap:10px}header h1{font-size:1.1rem}.container{padding:16px 12px}.form-row{flex-direction:column;align-items:stretch}input,select,textarea{font-size:16px!important}.btn{padding:11px 16px;min-height:44px}.btn-sm{padding:8px 12px;min-height:40px}.icon-btn{width:44px;height:44px}header{flex-wrap:nowrap}.menu-toggle{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;width:44px;height:44px;flex:none;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:1.2rem;line-height:1;color:var(--text);cursor:pointer;transition:border-color .15s}.menu-toggle[aria-expanded=true]{border-color:var(--accent);color:var(--accent)}.header-actions{position:absolute;top:calc(100% + 6px);right:14px;margin-left:0;flex-direction:column;align-items:stretch;gap:6px;min-width:210px;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-lg);z-index:60;display:none}.header-actions.menu-open{display:flex}.header-actions .btn,.header-actions .icon-btn{width:100%;justify-content:flex-start;min-height:44px}.header-actions .icon-btn{height:auto;gap:10px;padding:11px 16px;border-radius:8px;font-size:.88rem;font-weight:600;color:var(--muted)}.header-actions .icon-btn[data-label]:after{content:attr(data-label);font-family:inherit}.lbl-saved{flex-basis:auto;padding:2px 8px 4px}.summary-cards{grid-template-columns:1fr 1fr}.summary-cards .stat-card:nth-child(2n){border-right:none}}</style>
+</head>
+<body>
+  <div id="app"></div>
+</body>
+</html>
