@@ -7,9 +7,7 @@
   "scripts": {
     "start": "node server.js",
     "build": "vite build && cp dist/index.html public/index.html",
-    "dev": "vite",
-    "seed-from-export": "node scripts/seed-from-export.mjs",
-    "verify-migration": "node scripts/verify-migration.mjs"
+    "dev": "vite"
   },
   "devDependencies": {
     "vite": "^5.4.10",

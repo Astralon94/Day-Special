@@ -1,6 +1,14 @@
 # Dipendenze
 node_modules/
 
+# File di lavoro locali, non pubblicati
+CLAUDE.md
+avvia-dev.sh
+ferma-dev.sh
+scripts/seed-from-export.mjs
+scripts/verify-migration.mjs
+*.txt
+
 # Build output (rigenerato da vite build)
 dist/
 
