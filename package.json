@@ -3,7 +3,7 @@
   "version": "0.3.2",
   "private": true,
   "type": "module",
-  "description": "Day Special — server Node http + node:sqlite, zero dipendenze. Planner matrimonio (2 utenti), sync self-hosted (ex Supabase).",
+  "description": "Day Special — planner di matrimonio per due, offline-first: SPA singlefile + server Node (http + node:sqlite) senza dipendenze runtime, sync multi-dispositivo via SSE.",
   "scripts": {
     "start": "node server.js",
     "build": "vite build && cp dist/index.html public/index.html",
