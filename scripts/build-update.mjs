@@ -11,8 +11,8 @@ import { costruisciPacchetto, currentVersion } from '../server/updater.js';
 
 const APP_SLUG = 'day-special';
 const APP = join(dirname(fileURLToPath(import.meta.url)), '..');
-const ESCLUSI = new Set(['data', 'node_modules', '.git', 'dist', 'scripts', '.DS_Store', 'CLAUDE.md']);
-const OK_EXT = /\.(js|mjs|cjs|json|css|html|md|txt|svg|webmanifest|sh)$/i;
+const ESCLUSI = new Set(['data', 'node_modules', '.git', 'dist', 'scripts', '.DS_Store', 'CLAUDE.md', 'avvia-dev.sh', 'ferma-dev.sh']);
+const OK_EXT = /\.(js|mjs|cjs|json|css|html|md|svg|webmanifest)$/i;
 const BIN_EXT = /\.(png|ico|jpg|jpeg|gif|webp|woff2?)$/i;
 
 function elenca(dir, base = APP, out = []) {
