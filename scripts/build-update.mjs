@@ -1,5 +1,5 @@
 // Costruisce il pacchetto di aggiornamento (JSON gzippato) e il manifest, da pubblicare
-// come release su GitHub (repo Astralon94/day-special-update).
+// come release su GitHub (repo Astralon94/Day-Special, la stessa del codice).
 // Uso:  node scripts/build-update.mjs [--note "testo"]
 // Produce:  dist/day-special-<version>.json.gz  e  dist/manifest.json
 // ATTENZIONE: il frontend runnable è public/index.html → esegui PRIMA `npm run build`
@@ -58,4 +58,4 @@ writeFileSync(join(distDir, 'manifest.json'), JSON.stringify({ version, note, pu
 console.log(`Pacchetto: dist/${nomePkg} (${relativi.length} file, ${(gz.length / 1024).toFixed(1)} KB)`);
 console.log('Manifest:  dist/manifest.json');
 console.log(`\nPubblica con:  gh release create v${version} dist/manifest.json dist/${nomePkg} \\`);
-console.log(`  --repo Astralon94/${APP_SLUG}-update --title "Day-Special ${version}" --notes "${note || '...'}"`);
+console.log(`  --repo Astralon94/Day-Special --title "Day-Special ${version}" --notes "${note || '...'}"`);

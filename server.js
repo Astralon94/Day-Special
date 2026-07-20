@@ -18,7 +18,7 @@ const PORT = process.env.PORT || 4335;
 const EXIT_RESTART = 42;
 const UPDATE_URL = process.env.DS_UPDATE_URL !== undefined
   ? process.env.DS_UPDATE_URL
-  : 'https://github.com/Astralon94/day-special-update/releases/latest/download/manifest.json';
+  : 'https://github.com/Astralon94/Day-Special/releases/latest/download/manifest.json';
 let ultimoCheck = { corrente: updater.currentVersion(__dirname), disponibile: false, controllato_il: null };
 
 async function controllaAggiornamenti() {
