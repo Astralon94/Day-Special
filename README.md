@@ -7,8 +7,8 @@ dispositivi e utilizzabili anche offline.
 ## Caratteristiche
 
 - **Sei sezioni operative**: invitati (gruppi, conferme, intolleranze), budget
-  con preventivi e pagamenti, fornitori, programma della giornata, disposizione
-  dei tavoli, checklist dei preparativi.
+  con preventivi e pagamenti, fornitori, programma della giornata, sala grafica
+  con tavoli trascinabili e assegnazione degli invitati, checklist dei preparativi.
 - **Offline-first**: i dati vivono nel browser (localStorage) e la UI non
   aspetta mai la rete; il server è un mirror sincronizzato in background.
 - **Sync in tempo reale**: le modifiche si propagano agli altri dispositivi via
