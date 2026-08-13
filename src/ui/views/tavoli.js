@@ -5,38 +5,38 @@ export const title = 'Tavoli – Day Special';
 
 export const html = `
 <style>
-  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
-  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+  .layout { display: flex; flex-direction: column; gap: 18px; }
   .room-card, .tables-list-card, .unassigned-panel, .selected-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
-  .room-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--border); background: var(--surface-2); flex-wrap: wrap; }
+  .room-card { border-color: color-mix(in srgb, var(--border) 76%, var(--accent)); }
+  .room-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--surface); flex-wrap: wrap; }
   .room-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .room-title { font-weight: 700; font-size: .92rem; }
   .room-hint { color: var(--muted); font-size: .78rem; }
   .room-toggle { display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; color: var(--muted); user-select: none; }
   .room-toggle input { accent-color: var(--accent); }
   .room-zoom { min-width: 48px; text-align: center; font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .room-viewport { position: relative; height: min(68vh, 720px); min-height: 520px; overflow: hidden; background: var(--bg); touch-action: none; cursor: grab; }
+  .room-viewport { position: relative; height: min(72vh, 780px); min-height: 560px; overflow: hidden; background: color-mix(in srgb, var(--bg) 88%, var(--border)); touch-action: none; cursor: grab; box-shadow: inset 0 12px 30px color-mix(in srgb, var(--text) 5%, transparent); }
   .room-viewport.dragging { cursor: grabbing; }
-  .room-world { position: absolute; left: 0; top: 0; width: 1800px; height: 1100px; transform-origin: 0 0; background-color: var(--surface); background-image: linear-gradient(var(--border-soft) 1px, transparent 1px), linear-gradient(90deg, var(--border-soft) 1px, transparent 1px), linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px); background-size: 40px 40px, 40px 40px, 200px 200px, 200px 200px; border: 1px solid var(--border); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--surface) 60%, transparent); }
+  .room-world { position: absolute; left: 0; top: 0; width: 1800px; height: 1100px; transform-origin: 0 0; background-color: var(--surface); background-image: radial-gradient(circle, color-mix(in srgb, var(--border) 72%, transparent) 1.2px, transparent 1.3px); background-size: 40px 40px; border: 3px solid color-mix(in srgb, var(--border) 82%, var(--accent)); border-radius: 18px; box-shadow: 0 14px 40px color-mix(in srgb, var(--text) 12%, transparent), inset 0 0 0 12px color-mix(in srgb, var(--surface-2) 55%, transparent); }
   .room-empty { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: .9rem; text-align: center; pointer-events: none; }
   .room-table { position: absolute; width: 128px; height: 128px; transform-origin: 50% 50%; display: flex; align-items: center; justify-content: center; cursor: grab; user-select: none; touch-action: none; }
   .room-table:active { cursor: grabbing; }
   .room-table.selected .table-shape { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-lg); }
   .room-table.drag-over .table-shape { outline: 3px dashed var(--accent); outline-offset: 4px; }
-  .table-shape { width: 118px; height: 118px; border: 2px solid var(--border); background: var(--surface); box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; transition: border-color .15s, box-shadow .15s, transform .15s; }
+  .table-shape { width: 118px; height: 118px; border: 2px solid color-mix(in srgb, var(--border) 72%, var(--accent)); background: var(--surface); box-shadow: 0 8px 22px color-mix(in srgb, var(--text) 11%, transparent); display: flex; align-items: center; justify-content: center; transition: border-color .15s, box-shadow .15s, transform .15s; }
   .shape-round .table-shape { border-radius: 999px; }
   .shape-rect { width: 156px; height: 112px; }
   .shape-rect .table-shape { width: 148px; height: 96px; border-radius: 10px; }
-  .table-center { transform: rotate(var(--unrot, 0deg)); text-align: center; max-width: 92px; pointer-events: none; }
-  .table-name { display: block; font-weight: 800; font-size: .8rem; color: var(--text); line-height: 1.15; max-height: 2.3em; overflow: hidden; }
-  .table-seats { display: inline-block; margin-top: 5px; padding: 1px 7px; border-radius: 999px; background: var(--accent-soft); color: var(--gold-txt); font-size: .7rem; font-weight: 700; font-variant-numeric: tabular-nums; }
-  .table-seats.full { background: var(--danger-soft); color: var(--danger); }
-  .table-guests-preview { margin-top: 4px; color: var(--muted); font-size: .65rem; line-height: 1.15; max-height: 2.3em; overflow: hidden; }
+  .table-center { transform: rotate(var(--unrot, 0deg)); text-align: center; width: 100px; pointer-events: none; }
+  .table-number { display: block; font-weight: 800; font-size: 2rem; color: var(--text); line-height: .95; font-variant-numeric: tabular-nums; }
+  .table-occupancy { display: block; margin-top: 7px; color: var(--text); font-size: .7rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+  .table-free { display: inline-block; margin-top: 3px; padding: 2px 7px; border-radius: 999px; background: var(--success-soft); color: var(--success); font-size: .65rem; font-weight: 750; font-variant-numeric: tabular-nums; }
+  .table-free.full { background: var(--danger-soft); color: var(--danger); }
   .chip-tipo { font-size: .65rem; padding: 1px 5px; border-radius: 8px; font-weight: 700; }
   .chip-adulto  { background: var(--info-soft); color: var(--info); }
   .chip-bambino { background: var(--success-soft); color: var(--success); }
   .chip-neonato { background: var(--gold-soft); color: var(--gold-txt); }
-  .room-side { display: flex; flex-direction: column; gap: 14px; }
+  .room-side { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(360px, 1.2fr); gap: 18px; align-items: start; }
   .selected-panel { display: none; }
   .selected-panel.show { display: block; }
   .side-header, .panel-header { background: var(--surface-2); border-bottom: 1px solid var(--border); padding: 12px 16px; font-weight: 700; font-size: .9rem; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
@@ -53,7 +53,7 @@ export const html = `
   .guest-row-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .guest-row button { border: none; background: transparent; color: var(--muted); cursor: pointer; line-height: 1; padding: 2px; }
   .guest-row button:hover { color: var(--danger); }
-  .unassigned-panel { position: sticky; top: 84px; }
+  .unassigned-panel { min-width: 0; }
   .panel-badge { background: var(--accent-soft); color: var(--gold-txt); font-size: .75rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
   .panel-search { width: 100%; padding: 8px 12px; border: none; border-bottom: 1px solid var(--border); font-size: .88rem; font-family: inherit; outline: none; background: var(--surface); color: var(--text); }
   .panel-search:focus { border-bottom-color: var(--accent); }
@@ -93,7 +93,7 @@ export const html = `
   .sheet-opt .seats { font-size: .78rem; color: var(--muted); white-space: nowrap; }
   .sheet-opt.danger { color: var(--danger); border-color: var(--danger-soft); }
   @media (min-width: 600px) { .sheet-overlay { align-items: center; } .sheet { border-radius: 16px; } }
-  @media (max-width: 700px) { .room-viewport { height: 430px; min-height: 430px; } .room-hint { display: none; } .table-edit-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 760px) { .room-side { grid-template-columns: 1fr; } .room-viewport { height: 450px; min-height: 450px; } .room-hint { display: none; } .table-edit-grid { grid-template-columns: 1fr; } }
   @media print { .layout { grid-template-columns: 1fr; } .room-side, .chip-remove, .toolbar, .add-form, .room-toolbar .btn, .room-toggle, .tables-list-card { display: none !important; } .room-viewport { height: 720px; min-height: 720px; border: 1px solid #ddd; } .room-card { box-shadow: none; } }
 </style>
 <header>
@@ -120,7 +120,6 @@ export const html = `
   <div class="add-form" id="add-form">
     <h3>Nuovo tavolo</h3>
     <div class="form-row">
-      <div class="form-group"><label>Nome tavolo</label><input type="text" id="f-nome" placeholder="Es. Tavolo degli sposi" /></div>
       <div class="form-group"><label>N° posti</label><input type="number" id="f-posti" min="1" max="50" value="10" style="width:80px" /></div>
       <div class="form-group"><label>Forma</label><select id="f-shape"><option value="round">Rotondo</option><option value="rect">Rettangolare</option></select></div>
       <button class="btn btn-primary" onclick="addTavolo()">Crea</button>
@@ -157,7 +156,6 @@ export const html = `
         <div class="side-header"><span id="selected-title">Tavolo</span><button class="btn btn-sm btn-danger" id="btn-delete-selected">✕</button></div>
         <div class="side-body">
           <div class="table-edit-grid">
-            <div class="mini-field full"><label>Nome</label><input id="sel-name" type="text" /></div>
             <div class="mini-field"><label>Posti</label><input id="sel-posti" type="number" min="1" max="50" /></div>
             <div class="mini-field"><label>Forma</label><select id="sel-shape"><option value="round">Rotondo</option><option value="rect">Rettangolare</option></select></div>
             <div class="mini-field full" id="rotation-field"><label>Rotazione</label><input id="sel-rotation" type="range" min="0" max="330" step="15" /></div>
@@ -195,6 +193,7 @@ export function mount(root) {
   function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
   function snapCoord(v) { return data.layout.snap ? Math.round(v / GRID) * GRID : Math.round(v); }
   function orderedTavoli() { return data.tableOrder.map(id => data.tavoli.find(t => t.id === id)).filter(Boolean); }
+  function tableNumber(t) { return Math.max(1, data.tableOrder.indexOf(t.id) + 1); }
 
   function ensureLayout() {
     if (!data.layout || typeof data.layout !== 'object') data.layout = { ...DEFAULT_LAYOUT };
@@ -216,7 +215,7 @@ export function mount(root) {
       seen.add(t.id);
       if (!Array.isArray(t.guestIds)) t.guestIds = [];
       t.posti = clamp(parseInt(t.posti, 10) || 10, 1, 50);
-      t.nome = String(t.nome || ('Tavolo ' + (i + 1))).trim() || ('Tavolo ' + (i + 1));
+      delete t.nome;
       t.shape = tableShape(t);
       t.rotation = clamp(parseInt(t.rotation, 10) || 0, 0, 330);
       const pos = defaultPosition(i);
@@ -288,25 +287,23 @@ export function mount(root) {
   function toggleAddForm() {
     const f = $('#add-form');
     f.classList.toggle('open');
-    if (f.classList.contains('open')) $('#f-nome').focus();
+    if (f.classList.contains('open')) $('#f-posti').focus();
   }
 
   function addTavolo() {
-    const nome  = $('#f-nome').value.trim() || ('Tavolo ' + (data.tavoli.length + 1));
     const posti = clamp(parseInt($('#f-posti').value, 10) || 10, 1, 50);
     const shape = $('#f-shape').value === 'rect' ? 'rect' : 'round';
     const viewport = $('#room-viewport');
     const rect = viewport.getBoundingClientRect();
     const cx = clamp((-data.layout.panX + rect.width / 2) / data.layout.zoom, 100, ROOM_W - 100);
     const cy = clamp((-data.layout.panY + rect.height / 2) / data.layout.zoom, 100, ROOM_H - 100);
-    const t = { id: uid(), nome, posti, shape, rotation: 0, x: snapCoord(cx), y: snapCoord(cy), guestIds: [] };
+    const t = { id: uid(), posti, shape, rotation: 0, x: snapCoord(cx), y: snapCoord(cy), guestIds: [] };
     data.tavoli.push(t);
     data.tableOrder.push(t.id);
     selectedTid = t.id;
     save(); renderAll(); toggleAddForm();
-    $('#f-nome').value = '';
     $('#f-shape').value = 'round';
-    toast('Tavolo "' + nome + '" creato');
+    toast('Tavolo ' + tableNumber(t) + ' creato');
   }
 
   function deleteTavolo(id) {
@@ -315,11 +312,6 @@ export function mount(root) {
     data.tableOrder = data.tableOrder.filter(i => i !== id);
     if (selectedTid === id) selectedTid = null;
     save(); renderAll(); toast('Tavolo eliminato');
-  }
-
-  function renameTavolo(id, val) {
-    const t = data.tavoli.find(t => t.id === id);
-    if (t && val.trim()) { t.nome = val.trim(); save(); renderAll(); }
   }
 
   function resizeTavolo(id, val) {
@@ -427,14 +419,13 @@ export function mount(root) {
       world.appendChild(empty);
       return;
     }
-    const gMap = guestMap();
-    orderedTavoli().forEach(t => world.appendChild(buildRoomTable(t, gMap)));
+    orderedTavoli().forEach(t => world.appendChild(buildRoomTable(t)));
   }
 
-  function buildRoomTable(t, gMap) {
+  function buildRoomTable(t) {
     const occupati = (t.guestIds || []).length;
     const full = occupati >= t.posti;
-    const guests = (t.guestIds || []).map(id => gMap[id]).filter(Boolean);
+    const liberi = Math.max(0, t.posti - occupati);
     const el = document.createElement('div');
     el.className = 'room-table shape-' + tableShape(t) + (selectedTid === t.id ? ' selected' : '');
     el.dataset.tid = t.id;
@@ -445,9 +436,9 @@ export function mount(root) {
     el.innerHTML = `
       <div class="table-shape">
         <div class="table-center">
-          <span class="table-name">${esc(t.nome)}</span>
-          <span class="table-seats ${full ? 'full' : ''}">${occupati}/${t.posti}</span>
-          <div class="table-guests-preview">${guests.slice(0, 3).map(g => esc(g.name)).join('<br>')}${guests.length > 3 ? '<br>…' : ''}</div>
+          <span class="table-number">${tableNumber(t)}</span>
+          <span class="table-occupancy">${occupati} occupati su ${t.posti}</span>
+          <span class="table-free ${full ? 'full' : ''}">${full ? 'completo' : liberi + ' liberi'}</span>
         </div>
       </div>`;
     el.addEventListener('pointerdown', e => startTableDrag(e, t.id));
@@ -531,8 +522,7 @@ export function mount(root) {
     const t = data.tavoli.find(t => t.id === selectedTid);
     if (!t) { panel.classList.remove('show'); return; }
     panel.classList.add('show');
-    $('#selected-title').textContent = t.nome;
-    $('#sel-name').value = t.nome;
+    $('#selected-title').textContent = 'Tavolo ' + tableNumber(t);
     $('#sel-posti').value = t.posti;
     $('#sel-shape').value = tableShape(t);
     $('#sel-rotation').value = t.rotation || 0;
@@ -556,7 +546,6 @@ export function mount(root) {
 
   function renderTablesList() {
     const wrap = $('#tables-list');
-    const gMap = guestMap();
     if (!data.tavoli.length) {
       wrap.innerHTML = '<div class="empty-panel">Nessun tavolo creato.</div>';
       return;
@@ -567,7 +556,7 @@ export function mount(root) {
       item.className = 'table-list-item';
       item.innerHTML = `
         <span class="shape-dot ${tableShape(t)}"></span>
-        <div class="table-list-main"><div class="table-list-name">${esc(t.nome)}</div><div class="table-list-sub">${(t.guestIds || []).length}/${t.posti} posti · ${tableShape(t) === 'rect' ? 'rettangolare' : 'rotondo'}</div></div>
+        <div class="table-list-main"><div class="table-list-name">Tavolo ${tableNumber(t)}</div><div class="table-list-sub">${(t.guestIds || []).length} occupati · ${Math.max(0, t.posti - (t.guestIds || []).length)} liberi · ${tableShape(t) === 'rect' ? 'rettangolare' : 'rotondo'}</div></div>
         <button class="btn btn-sm btn-ghost" data-act="pick">Apri</button>`;
       item.addEventListener('click', () => selectTable(t.id, { center: true }));
       item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
@@ -630,7 +619,7 @@ export function mount(root) {
       const isCur = t.id === currentTid;
       const full  = occ >= t.posti && !isCur;
       return `<button class="sheet-opt ${isCur ? 'current' : ''}" data-tid="${t.id}" ${full ? 'disabled' : ''}>
-        <span>${esc(t.nome)}${isCur ? ' ✓' : ''}</span>
+        <span>Tavolo ${tableNumber(t)}${isCur ? ' ✓' : ''}</span>
         <span class="seats">${occ}/${t.posti}${full ? ' · pieno' : ''}</span>
       </button>`;
     }).join('');
@@ -669,7 +658,7 @@ export function mount(root) {
   }
 
   Object.assign(window, {
-    toggleAddForm, addTavolo, deleteTavolo, renameTavolo, resizeTavolo,
+    toggleAddForm, addTavolo, deleteTavolo, resizeTavolo,
     removeGuest, renderUnassigned, selectTable,
   });
 
@@ -683,8 +672,6 @@ export function mount(root) {
   $('#btn-center-room').addEventListener('click', centerRoom);
   $('#room-snap').addEventListener('change', e => { data.layout.snap = e.target.checked; save(); setWorldTransform(); });
   $('#btn-delete-selected').addEventListener('click', () => { if (selectedTid) deleteTavolo(selectedTid); });
-  $('#sel-name').addEventListener('blur', e => { if (selectedTid) renameTavolo(selectedTid, e.target.value); });
-  $('#sel-name').addEventListener('keydown', e => { if (e.key === 'Enter') e.target.blur(); });
   $('#sel-posti').addEventListener('blur', e => { if (selectedTid) resizeTavolo(selectedTid, e.target.value); });
   $('#sel-shape').addEventListener('change', e => { if (selectedTid) setTableShape(selectedTid, e.target.value); });
   $('#sel-rotation').addEventListener('input', e => { if (selectedTid) rotateTable(selectedTid, e.target.value); });
