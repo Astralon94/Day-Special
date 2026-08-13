@@ -5,7 +5,11 @@ export const title = 'Tavoli – Day Special';
 
 export const html = `
 <style>
-  .layout { display: flex; flex-direction: column; gap: 18px; }
+  /* Due colonne su desktop: sala a sinistra, pannelli operativi a destra
+     (sticky, così ospiti e tavoli restano visibili insieme durante il drag). */
+  .layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 18px; align-items: start; }
+  .room-main { min-width: 0; }
+  .room-side { position: sticky; top: 82px; display: flex; flex-direction: column; gap: 18px; }
   .room-card, .tables-list-card, .unassigned-panel, .selected-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
   .room-card { border-color: color-mix(in srgb, var(--border) 76%, var(--accent)); }
   .room-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--surface); flex-wrap: wrap; }
@@ -21,27 +25,35 @@ export const html = `
   .room-empty { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); color: var(--muted); font-size: .9rem; text-align: center; pointer-events: none; }
   .room-table { position: absolute; width: 128px; height: 128px; transform-origin: 50% 50%; display: flex; align-items: center; justify-content: center; cursor: grab; user-select: none; touch-action: none; }
   .room-table:active { cursor: grabbing; }
-  .room-table.selected .table-shape { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-lg); }
-  .room-table.drag-over .table-shape { outline: 3px dashed var(--accent); outline-offset: 4px; }
   .table-shape { width: 118px; height: 118px; border: 2px solid color-mix(in srgb, var(--border) 72%, var(--accent)); background: var(--surface); box-shadow: 0 8px 22px color-mix(in srgb, var(--text) 11%, transparent); display: flex; align-items: center; justify-content: center; transition: border-color .15s, box-shadow .15s, transform .15s; }
   .shape-round .table-shape { border-radius: 999px; }
   .shape-rect { width: 156px; height: 112px; }
   .shape-rect .table-shape { width: 148px; height: 96px; border-radius: 10px; }
+  .room-table.is-full .table-shape { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+  .room-table.is-sposi .table-shape { border-color: var(--accent); box-shadow: 0 0 0 3px var(--gold-soft), 0 8px 22px color-mix(in srgb, var(--text) 11%, transparent); }
+  .room-table.selected .table-shape { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft), var(--shadow-lg); }
+  .room-table.drag-over .table-shape { outline: 3px dashed var(--accent); outline-offset: 4px; }
+  /* Sedie: pallini lungo il perimetro (pieni = occupati). Leggibili a ogni zoom. */
+  .seat { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: var(--surface); border: 1.5px solid color-mix(in srgb, var(--muted) 55%, var(--border)); transform: translate(-50%, -50%); pointer-events: none; }
+  .seat.occ { background: var(--accent); border-color: var(--accent-dk); }
   .table-center { transform: rotate(var(--unrot, 0deg)); text-align: center; width: 100px; pointer-events: none; }
   .table-number { display: block; font-weight: 800; font-size: 2rem; color: var(--text); line-height: .95; font-variant-numeric: tabular-nums; }
-  .table-occupancy { display: block; margin-top: 7px; color: var(--text); font-size: .7rem; font-weight: 750; font-variant-numeric: tabular-nums; }
-  .table-free { display: inline-block; margin-top: 3px; padding: 2px 7px; border-radius: 999px; background: var(--success-soft); color: var(--success); font-size: .65rem; font-weight: 750; font-variant-numeric: tabular-nums; }
-  .table-free.full { background: var(--danger-soft); color: var(--danger); }
+  .table-occ { display: inline-block; margin-top: 6px; padding: 2px 9px; border-radius: 999px; background: var(--success-soft); color: var(--success); font-size: .8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .table-occ.near { background: var(--warning-soft); color: var(--warning); }
+  .table-occ.full { background: var(--danger-soft); color: var(--danger); }
+  .table-tag { display: inline-block; margin-top: 5px; padding: 1px 8px; border-radius: 999px; background: var(--gold-soft); color: var(--gold-txt); font-size: .62rem; font-weight: 700; white-space: nowrap; }
+  /* A zoom molto basso il testo secondario diventa illeggibile: restano numero e sedie. */
+  .zoom-far .table-occ, .zoom-far .table-tag { display: none; }
   .chip-tipo { font-size: .65rem; padding: 1px 5px; border-radius: 8px; font-weight: 700; }
   .chip-adulto  { background: var(--info-soft); color: var(--info); }
   .chip-bambino { background: var(--success-soft); color: var(--success); }
   .chip-neonato { background: var(--gold-soft); color: var(--gold-txt); }
-  .room-side { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(360px, 1.2fr); gap: 18px; align-items: start; }
   .selected-panel { display: none; }
   .selected-panel.show { display: block; }
   .side-header, .panel-header { background: var(--surface-2); border-bottom: 1px solid var(--border); padding: 12px 16px; font-weight: 700; font-size: .9rem; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .side-title { display: flex; align-items: center; gap: 8px; min-width: 0; }
   .side-body { padding: 12px 14px; }
-  .table-edit-grid { display: grid; grid-template-columns: 1fr 78px; gap: 10px; }
+  .table-edit-grid { display: grid; grid-template-columns: 96px 1fr; gap: 10px; }
   .table-edit-grid .full { grid-column: 1 / -1; }
   .mini-field { display: flex; flex-direction: column; gap: 4px; }
   .mini-field label { font-size: .72rem; color: var(--muted); font-weight: 600; }
@@ -54,10 +66,10 @@ export const html = `
   .guest-row button { border: none; background: transparent; color: var(--muted); cursor: pointer; line-height: 1; padding: 2px; }
   .guest-row button:hover { color: var(--danger); }
   .unassigned-panel { min-width: 0; }
-  .panel-badge { background: var(--accent-soft); color: var(--gold-txt); font-size: .75rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+  .panel-badge { background: var(--accent-soft); color: var(--gold-txt); font-size: .75rem; padding: 2px 8px; border-radius: 10px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .panel-search { width: 100%; padding: 8px 12px; border: none; border-bottom: 1px solid var(--border); font-size: .88rem; font-family: inherit; outline: none; background: var(--surface); color: var(--text); }
   .panel-search:focus { border-bottom-color: var(--accent); }
-  .unassigned-list { padding: 8px; max-height: 54vh; overflow-y: auto; }
+  .unassigned-list { padding: 8px; max-height: clamp(220px, 40vh, 480px); overflow-y: auto; }
   .unassigned-chip { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; margin: 2px 0; background: var(--bg); cursor: grab; font-size: .85rem; }
   .unassigned-chip:active { cursor: grabbing; }
   .unassigned-chip:hover { border-color: var(--accent); background: var(--surface-2); }
@@ -71,8 +83,12 @@ export const html = `
   .sec-sposi  { background: var(--accent-soft); color: var(--gold-txt); }
   .empty-panel { text-align: center; color: var(--muted); font-size: .82rem; padding: 20px; }
   .assign-hint { font-size: .78rem; color: var(--muted); padding: 6px 10px 2px; }
+  .mini-bar { display: block; height: 4px; border-radius: 2px; background: var(--border-soft); overflow: hidden; margin-top: 7px; }
+  .mini-bar > i { display: block; height: 100%; border-radius: 2px; background: var(--success); }
+  .mini-bar.near > i { background: var(--warning); }
+  .mini-bar.full > i { background: var(--danger); }
   .tables-list-card { margin-top: 18px; }
-  .tables-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; padding: 14px; }
+  .tables-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; padding: 14px; }
   .table-list-item { border: 1px solid var(--border); border-radius: 10px; background: var(--surface); padding: 11px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
   .table-list-item:hover { border-color: var(--accent); background: var(--surface-2); }
   .shape-dot { width: 30px; height: 30px; border: 2px solid var(--accent); background: var(--accent-soft); flex: none; }
@@ -80,7 +96,7 @@ export const html = `
   .shape-dot.rect { border-radius: 6px; width: 38px; }
   .table-list-main { flex: 1; min-width: 0; }
   .table-list-name { font-weight: 700; font-size: .88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .table-list-sub { color: var(--muted); font-size: .76rem; margin-top: 2px; }
+  .table-list-sub { color: var(--muted); font-size: .76rem; margin-top: 2px; font-variant-numeric: tabular-nums; }
   .sheet-overlay { position: fixed; inset: 0; z-index: 1000; background: color-mix(in srgb, var(--bg) 55%, transparent); backdrop-filter: blur(3px); display: flex; align-items: flex-end; justify-content: center; }
   .sheet { background: var(--surface); border: 1px solid var(--border); border-radius: 16px 16px 0 0; box-shadow: var(--shadow-lg); width: 100%; max-width: 520px; max-height: 80vh; overflow-y: auto; padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); animation: fadeUp .2s ease both; }
   .sheet-handle { width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 8px auto 12px; }
@@ -90,10 +106,16 @@ export const html = `
   .sheet-opt:hover:not(:disabled) { border-color: var(--accent); }
   .sheet-opt.current { border-color: var(--accent); background: var(--accent-soft); }
   .sheet-opt:disabled { opacity: .5; cursor: not-allowed; }
-  .sheet-opt .seats { font-size: .78rem; color: var(--muted); white-space: nowrap; }
+  .sheet-opt .seats { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; font-size: .78rem; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .sheet-opt .seats .mini-bar { width: 64px; margin: 0; }
   .sheet-opt.danger { color: var(--danger); border-color: var(--danger-soft); }
   @media (min-width: 600px) { .sheet-overlay { align-items: center; } .sheet { border-radius: 16px; } }
-  @media (max-width: 760px) { .room-side { grid-template-columns: 1fr; } .room-viewport { height: 450px; min-height: 450px; } .room-hint { display: none; } .table-edit-grid { grid-template-columns: 1fr; } }
+  @media (max-width: 1100px) {
+    .layout { grid-template-columns: 1fr; }
+    /* auto-fit: i pannelli si affiancano quando c'è spazio, uno solo occupa tutta la riga */
+    .room-side { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  }
+  @media (max-width: 760px) { .room-viewport { height: 450px; min-height: 450px; } .room-hint { display: none; } .table-edit-grid { grid-template-columns: 1fr; } }
   @media print { .layout { grid-template-columns: 1fr; } .room-side, .chip-remove, .toolbar, .add-form, .room-toolbar .btn, .room-toggle, .tables-list-card { display: none !important; } .room-viewport { height: 720px; min-height: 720px; border: 1px solid #ddd; } .room-card { box-shadow: none; } }
 </style>
 <header>
@@ -127,18 +149,18 @@ export const html = `
     </div>
   </div>
   <div class="layout">
-    <div>
+    <div class="room-main">
       <div class="room-card">
         <div class="room-toolbar">
           <div>
             <div class="room-title">Sala grafica</div>
-            <div class="room-hint">Trascina i tavoli, trascina la sala per spostarti, usa lo zoom per orientarti.</div>
+            <div class="room-hint">Trascina i tavoli per disporli, lo sfondo per muoverti; rotellina o +/− per lo zoom.</div>
           </div>
           <div class="room-tools no-print">
-            <button class="btn btn-sm btn-ghost" id="btn-zoom-out" title="Riduci zoom">−</button>
+            <button class="btn btn-sm btn-ghost" id="btn-zoom-out" title="Riduci zoom" aria-label="Riduci zoom">−</button>
             <span class="room-zoom" id="room-zoom-label">100%</span>
-            <button class="btn btn-sm btn-ghost" id="btn-zoom-in" title="Aumenta zoom">+</button>
-            <button class="btn btn-sm btn-ghost" id="btn-center-room">Centra</button>
+            <button class="btn btn-sm btn-ghost" id="btn-zoom-in" title="Aumenta zoom" aria-label="Aumenta zoom">+</button>
+            <button class="btn btn-sm btn-ghost" id="btn-fit-room" title="Adatta la sala alla finestra">Adatta</button>
             <label class="room-toggle"><input type="checkbox" id="room-snap" /> Snap griglia</label>
           </div>
         </div>
@@ -153,7 +175,10 @@ export const html = `
     </div>
     <div class="room-side no-print">
       <div class="selected-panel" id="selected-panel">
-        <div class="side-header"><span id="selected-title">Tavolo</span><button class="btn btn-sm btn-danger" id="btn-delete-selected">✕</button></div>
+        <div class="side-header">
+          <span class="side-title"><span id="selected-title">Tavolo</span><span class="panel-badge" id="selected-occ">0/0</span></span>
+          <button class="btn btn-sm btn-danger" id="btn-delete-selected" title="Elimina tavolo">✕</button>
+        </div>
         <div class="side-body">
           <div class="table-edit-grid">
             <div class="mini-field"><label>Posti</label><input id="sel-posti" type="number" min="1" max="50" /></div>
@@ -182,11 +207,15 @@ export function mount(root) {
   const ROOM_W = 1800;
   const ROOM_H = 1100;
   const GRID = 40;
+  const MAX_SEAT_DOTS = 36;
   const DEFAULT_LAYOUT = { zoom: 0.72, panX: 32, panY: 32, snap: true };
+  const TIPO_LABEL = { adulto: 'Adulto', bambino: 'Bambino', neonato: 'Neonato' };
 
   let data = { tavoli: [], tableOrder: [], layout: { ...DEFAULT_LAYOUT } };
   let selectedTid = null;
   let roomPointer = null;
+  let hadSavedLayout = false;
+  let printPrevLayout = null;
 
   function save() { DS.set('ds_tavoli', data); }
   function tableShape(t) { return t.shape === 'rect' ? 'rect' : 'round'; }
@@ -194,6 +223,16 @@ export function mount(root) {
   function snapCoord(v) { return data.layout.snap ? Math.round(v / GRID) * GRID : Math.round(v); }
   function orderedTavoli() { return data.tableOrder.map(id => data.tavoli.find(t => t.id === id)).filter(Boolean); }
   function tableNumber(t) { return Math.max(1, data.tableOrder.indexOf(t.id) + 1); }
+  function occState(occ, posti) { return occ >= posti ? 'full' : (posti - occ <= 2 ? 'near' : ''); }
+  function occBar(occ, posti) {
+    const pct = posti ? Math.min(100, Math.round(occ / posti * 100)) : 0;
+    return `<span class="mini-bar ${occState(occ, posti)}"><i style="width:${pct}%"></i></span>`;
+  }
+  function liberiLabel(n) { return n === 1 ? '1 libero' : n + ' liberi'; }
+  function tipoChip(g) {
+    const tipo = TIPO_LABEL[g.tipo] ? g.tipo : 'adulto';
+    return `<span class="chip-tipo chip-${tipo}" title="${TIPO_LABEL[tipo]}">${tipo[0].toUpperCase()}</span>`;
+  }
 
   function ensureLayout() {
     if (!data.layout || typeof data.layout !== 'object') data.layout = { ...DEFAULT_LAYOUT };
@@ -230,6 +269,7 @@ export function mount(root) {
   function load() {
     const d = DS.get('ds_tavoli');
     if (d) data = d;
+    hadSavedLayout = !!(d && d.layout);
     if (!Array.isArray(data.tavoli)) data.tavoli = [];
     if (!Array.isArray(data.tableOrder)) data.tableOrder = data.tavoli.map(t => t.id);
     ensureLayout();
@@ -372,6 +412,7 @@ export function mount(root) {
   function setWorldTransform() {
     const world = $('#room-world');
     world.style.transform = `translate(${data.layout.panX}px, ${data.layout.panY}px) scale(${data.layout.zoom})`;
+    $('#room-viewport').classList.toggle('zoom-far', data.layout.zoom < 0.5);
     $('#room-zoom-label').textContent = Math.round(data.layout.zoom * 100) + '%';
     $('#room-snap').checked = !!data.layout.snap;
   }
@@ -384,18 +425,31 @@ export function mount(root) {
     };
   }
 
-  function zoomRoom(delta) {
+  /* Zoom centrato su un punto della viewport (default: il centro), così la
+     vista non "scappa" quando si zooma con la rotellina sul puntatore. */
+  function zoomRoom(delta, cx, cy) {
+    const rect = $('#room-viewport').getBoundingClientRect();
+    if (cx == null) { cx = rect.width / 2; cy = rect.height / 2; }
     const old = data.layout.zoom;
-    data.layout.zoom = clamp(old + delta, 0.35, 1.6);
+    const nz = clamp(Math.round((old + delta) * 100) / 100, 0.35, 1.6);
+    if (nz === old) return;
+    const wx = (cx - data.layout.panX) / old;
+    const wy = (cy - data.layout.panY) / old;
+    data.layout.panX = Math.round(cx - wx * nz);
+    data.layout.panY = Math.round(cy - wy * nz);
+    data.layout.zoom = nz;
     save(); setWorldTransform();
   }
 
-  function centerRoom() {
-    const viewport = $('#room-viewport');
-    const rect = viewport.getBoundingClientRect();
+  function fitRoom({ persist = true } = {}) {
+    const rect = $('#room-viewport').getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+    const zoom = clamp(Math.min((rect.width - 24) / ROOM_W, (rect.height - 24) / ROOM_H), 0.35, 1.6);
+    data.layout.zoom = Math.round(zoom * 100) / 100;
     data.layout.panX = Math.round((rect.width - ROOM_W * data.layout.zoom) / 2);
     data.layout.panY = Math.round((rect.height - ROOM_H * data.layout.zoom) / 2);
-    save(); setWorldTransform();
+    if (persist) save();
+    setWorldTransform();
   }
 
   function centerOnTable(id) {
@@ -406,6 +460,60 @@ export function mount(root) {
     data.layout.panX = Math.round(rect.width / 2 - t.x * data.layout.zoom);
     data.layout.panY = Math.round(rect.height / 2 - t.y * data.layout.zoom);
     save();
+  }
+
+  /* In stampa la sala esce sempre intera: fit temporaneo sull'area di stampa
+     (720px di altezza, vedi @media print), ripristinato subito dopo. */
+  function onBeforePrint() {
+    printPrevLayout = { ...data.layout };
+    const rect = $('#room-viewport').getBoundingClientRect();
+    const w = rect.width || 700;
+    const h = 720;
+    data.layout.zoom = Math.min((w - 24) / ROOM_W, (h - 24) / ROOM_H);
+    data.layout.panX = Math.round((w - ROOM_W * data.layout.zoom) / 2);
+    data.layout.panY = Math.round((h - ROOM_H * data.layout.zoom) / 2);
+    setWorldTransform();
+  }
+  function onAfterPrint() {
+    if (!printPrevLayout) return;
+    data.layout = printPrevLayout;
+    printPrevLayout = null;
+    setWorldTransform();
+  }
+
+  /* Posizioni delle sedie lungo il perimetro del tavolo, nel sistema di
+     coordinate del contenitore .room-table (ruota insieme al tavolo). */
+  function seatPositions(shape, n) {
+    const pts = [];
+    if (shape === 'round') {
+      const r = 67;
+      for (let i = 0; i < n; i++) {
+        const a = -Math.PI / 2 + (i / n) * Math.PI * 2;
+        pts.push({ x: 64 + Math.cos(a) * r, y: 64 + Math.sin(a) * r });
+      }
+    } else {
+      const w = 162, h = 110, P = 2 * (w + h);
+      for (let i = 0; i < n; i++) {
+        let d = (w / 2 + (i / n) * P) % P;
+        let x, y;
+        if (d < w) { x = d - w / 2; y = -h / 2; }
+        else if ((d -= w) < h) { x = w / 2; y = d - h / 2; }
+        else if ((d -= h) < w) { x = w / 2 - d; y = h / 2; }
+        else { d -= w; x = -w / 2; y = h / 2 - d; }
+        pts.push({ x: 78 + x, y: 56 + y });
+      }
+    }
+    return pts;
+  }
+
+  function seatDotsHtml(t) {
+    const occ = (t.guestIds || []).length;
+    const n = Math.min(t.posti, MAX_SEAT_DOTS);
+    // Se i posti superano il tetto di pallini, gli occupati scalano in proporzione.
+    const filled = occ ? Math.max(1, Math.min(n, Math.round(occ / t.posti * n))) : 0;
+    return seatPositions(tableShape(t), n)
+      .map((p, i) => `<span class="seat${i < filled ? ' occ' : ''}" style="left:${p.x.toFixed(1)}px;top:${p.y.toFixed(1)}px"></span>`)
+      .join('');
   }
 
   function renderRoom() {
@@ -419,26 +527,31 @@ export function mount(root) {
       world.appendChild(empty);
       return;
     }
-    orderedTavoli().forEach(t => world.appendChild(buildRoomTable(t)));
+    const sposiIds = new Set(getConfirmati().filter(g => g.sec === 'sposi').map(g => g.id));
+    orderedTavoli().forEach(t => world.appendChild(buildRoomTable(t, sposiIds)));
   }
 
-  function buildRoomTable(t) {
+  function buildRoomTable(t, sposiIds) {
     const occupati = (t.guestIds || []).length;
     const full = occupati >= t.posti;
-    const liberi = Math.max(0, t.posti - occupati);
+    const isSposi = (t.guestIds || []).some(id => sposiIds.has(id));
     const el = document.createElement('div');
-    el.className = 'room-table shape-' + tableShape(t) + (selectedTid === t.id ? ' selected' : '');
+    el.className = 'room-table shape-' + tableShape(t)
+      + (full ? ' is-full' : '')
+      + (isSposi ? ' is-sposi' : '')
+      + (selectedTid === t.id ? ' selected' : '');
     el.dataset.tid = t.id;
     el.style.left = t.x + 'px';
     el.style.top = t.y + 'px';
     el.style.transform = `translate(-50%, -50%) rotate(${t.rotation || 0}deg)`;
     el.style.setProperty('--unrot', (-(t.rotation || 0)) + 'deg');
     el.innerHTML = `
+      ${seatDotsHtml(t)}
       <div class="table-shape">
         <div class="table-center">
           <span class="table-number">${tableNumber(t)}</span>
-          <span class="table-occupancy">${occupati} occupati su ${t.posti}</span>
-          <span class="table-free ${full ? 'full' : ''}">${full ? 'completo' : liberi + ' liberi'}</span>
+          <span class="table-occ ${occState(occupati, t.posti)}" title="${occupati} su ${t.posti}, ${liberiLabel(Math.max(0, t.posti - occupati))}">${occupati}/${t.posti}</span>
+          ${isSposi ? '<br><span class="table-tag">💍 Sposi</span>' : ''}
         </div>
       </div>`;
     el.addEventListener('pointerdown', e => startTableDrag(e, t.id));
@@ -522,7 +635,9 @@ export function mount(root) {
     const t = data.tavoli.find(t => t.id === selectedTid);
     if (!t) { panel.classList.remove('show'); return; }
     panel.classList.add('show');
+    const occ = (t.guestIds || []).length;
     $('#selected-title').textContent = 'Tavolo ' + tableNumber(t);
+    $('#selected-occ').textContent = occ + '/' + t.posti;
     $('#sel-posti').value = t.posti;
     $('#sel-shape').value = tableShape(t);
     $('#sel-rotation').value = t.rotation || 0;
@@ -539,7 +654,7 @@ export function mount(root) {
     guests.forEach(g => {
       const row = document.createElement('div');
       row.className = 'guest-row';
-      row.innerHTML = `<span class="chip-tipo chip-${g.tipo}">${g.tipo[0].toUpperCase()}</span><span class="guest-row-name">${esc(g.name)}</span><button onclick="removeGuest('${t.id}','${g.id}')" title="Rimuovi">✕</button>`;
+      row.innerHTML = `${tipoChip(g)}<span class="guest-row-name">${esc(g.name)}</span><button onclick="removeGuest('${t.id}','${g.id}')" title="Rimuovi">✕</button>`;
       wrap.appendChild(row);
     });
   }
@@ -552,12 +667,18 @@ export function mount(root) {
     }
     wrap.innerHTML = '';
     orderedTavoli().forEach(t => {
+      const occ = (t.guestIds || []).length;
+      const liberi = Math.max(0, t.posti - occ);
       const item = document.createElement('div');
       item.className = 'table-list-item';
+      item.title = 'Seleziona nella sala';
       item.innerHTML = `
         <span class="shape-dot ${tableShape(t)}"></span>
-        <div class="table-list-main"><div class="table-list-name">Tavolo ${tableNumber(t)}</div><div class="table-list-sub">${(t.guestIds || []).length} occupati · ${Math.max(0, t.posti - (t.guestIds || []).length)} liberi · ${tableShape(t) === 'rect' ? 'rettangolare' : 'rotondo'}</div></div>
-        <button class="btn btn-sm btn-ghost" data-act="pick">Apri</button>`;
+        <div class="table-list-main">
+          <div class="table-list-name">Tavolo ${tableNumber(t)}</div>
+          <div class="table-list-sub">${occ}/${t.posti} · ${liberiLabel(liberi)} · ${tableShape(t) === 'rect' ? 'rettangolare' : 'rotondo'}</div>
+          ${occBar(occ, t.posti)}
+        </div>`;
       item.addEventListener('click', () => selectTable(t.id, { center: true }));
       item.addEventListener('dragover', e => { e.preventDefault(); item.classList.add('drag-over'); });
       item.addEventListener('drop', e => { e.preventDefault(); const gid = e.dataTransfer.getData('guestId'); if (gid) assignGuest(t.id, gid); });
@@ -596,7 +717,7 @@ export function mount(root) {
         chip.className = 'unassigned-chip';
         chip.draggable = true;
         chip.dataset.gid = g.id;
-        chip.innerHTML = `<span class="chip-tipo chip-${g.tipo}">${g.tipo[0].toUpperCase()}</span><span style="flex:1">${esc(g.name)}</span>`;
+        chip.innerHTML = `${tipoChip(g)}<span style="flex:1">${esc(g.name)}</span>`;
         chip.addEventListener('dragstart', e => {
           e.dataTransfer.setData('guestId', g.id);
           e.dataTransfer.effectAllowed = 'move';
@@ -620,7 +741,7 @@ export function mount(root) {
       const full  = occ >= t.posti && !isCur;
       return `<button class="sheet-opt ${isCur ? 'current' : ''}" data-tid="${t.id}" ${full ? 'disabled' : ''}>
         <span>Tavolo ${tableNumber(t)}${isCur ? ' ✓' : ''}</span>
-        <span class="seats">${occ}/${t.posti}${full ? ' · pieno' : ''}</span>
+        <span class="seats"><span>${occ}/${t.posti}${full ? ' · pieno' : ''}</span>${occBar(occ, t.posti)}</span>
       </button>`;
     }).join('');
 
@@ -636,7 +757,12 @@ export function mount(root) {
         <button class="sheet-opt" data-action="cancel" style="justify-content:center">Annulla</button>
       </div>`;
 
-    const close = () => overlay.remove();
+    function close() {
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    document.addEventListener('keydown', onKey);
     overlay.addEventListener('click', e => {
       if (e.target === overlay) return close();
       const btn = e.target.closest('.sheet-opt');
@@ -665,22 +791,30 @@ export function mount(root) {
   $('#room-viewport').addEventListener('pointerdown', startRoomPan);
   $('#room-viewport').addEventListener('wheel', e => {
     e.preventDefault();
-    zoomRoom(e.deltaY > 0 ? -0.08 : 0.08);
+    const rect = $('#room-viewport').getBoundingClientRect();
+    zoomRoom(e.deltaY > 0 ? -0.08 : 0.08, e.clientX - rect.left, e.clientY - rect.top);
   }, { passive: false });
   $('#btn-zoom-in').addEventListener('click', () => zoomRoom(0.1));
   $('#btn-zoom-out').addEventListener('click', () => zoomRoom(-0.1));
-  $('#btn-center-room').addEventListener('click', centerRoom);
+  $('#btn-fit-room').addEventListener('click', () => fitRoom());
   $('#room-snap').addEventListener('change', e => { data.layout.snap = e.target.checked; save(); setWorldTransform(); });
   $('#btn-delete-selected').addEventListener('click', () => { if (selectedTid) deleteTavolo(selectedTid); });
   $('#sel-posti').addEventListener('blur', e => { if (selectedTid) resizeTavolo(selectedTid, e.target.value); });
   $('#sel-shape').addEventListener('change', e => { if (selectedTid) setTableShape(selectedTid, e.target.value); });
   $('#sel-rotation').addEventListener('input', e => { if (selectedTid) rotateTable(selectedTid, e.target.value); });
+  window.addEventListener('beforeprint', onBeforePrint);
+  window.addEventListener('afterprint', onAfterPrint);
 
   load(); renderAll();
+  if (!hadSavedLayout) fitRoom();
   const onChange = e => {
     if (e.detail.key === 'ds_invitati') { cleanupOrphans(); renderAll(); }
     if (e.detail.remote && e.detail.key === 'ds_tavoli') { load(); renderAll(); }
   };
   window.addEventListener('ds:change', onChange);
-  return () => window.removeEventListener('ds:change', onChange);
+  return () => {
+    window.removeEventListener('ds:change', onChange);
+    window.removeEventListener('beforeprint', onBeforePrint);
+    window.removeEventListener('afterprint', onAfterPrint);
+  };
 }
