@@ -116,8 +116,8 @@ export function mount(root) {
   function load() {
     const d = DS.get('ds_tavoli');
     if (d) data = d;
-    if (!data.tavoli) data.tavoli = [];
-    if (!data.tableOrder) data.tableOrder = data.tavoli.map(t => t.id);
+    if (!Array.isArray(data.tavoli)) data.tavoli = [];
+    if (!Array.isArray(data.tableOrder)) data.tableOrder = data.tavoli.map(t => t.id);
     cleanupOrphans();
   }
 

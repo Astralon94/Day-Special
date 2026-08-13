@@ -132,7 +132,7 @@ export function mount(root) {
   function load() {
     const d = DS.get('ds_fornitori');
     if (d) data = d;
-    if (!data.fornitori) data.fornitori = [];
+    if (!Array.isArray(data.fornitori)) data.fornitori = [];
   }
 
   function updateSummary() {

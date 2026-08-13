@@ -1,6 +1,6 @@
 // ============ Server HTTP — zero dipendenze (solo core Node) ============
-// Nessuna autenticazione applicativa: l'unica protezione è Cloudflare Access
-// davanti al tunnel (vedi CLAUDE.md). API aperta una volta passato il tunnel.
+// Nessuna autenticazione applicativa: in produzione l'accesso va protetto a monte.
+// Le API restano aperte per chi raggiunge direttamente il server.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, dirname } from 'node:path';

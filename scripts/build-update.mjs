@@ -17,7 +17,7 @@ const BIN_EXT = /\.(png|ico|jpg|jpeg|gif|webp|woff2?)$/i;
 
 function elenca(dir, base = APP, out = []) {
   for (const n of readdirSync(dir)) {
-    if (ESCLUSI.has(n)) continue;
+    if (n.startsWith('.') || ESCLUSI.has(n)) continue;
     const p = join(dir, n);
     const st = statSync(p);
     if (st.isDirectory()) elenca(p, base, out);

@@ -105,8 +105,8 @@ export function mount(root) {
   function load() {
     const d = DS.get('ds_programma');
     if (d) prog = d;
-    if (!prog.eventi) prog.eventi = [];
-    if (!prog.eventOrder) prog.eventOrder = prog.eventi.map(e => e.id);
+    if (!Array.isArray(prog.eventi)) prog.eventi = [];
+    if (!Array.isArray(prog.eventOrder)) prog.eventOrder = prog.eventi.map(e => e.id);
     if (prog.data) {
       $('#input-data').value = prog.data;
       updateDataDisplay();

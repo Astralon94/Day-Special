@@ -369,10 +369,13 @@ export function mount(root) {
 
     SECTIONS.forEach(s => {
       if (!data[s]) data[s] = { groups: [], groupOrder: [] };
+      if (!Array.isArray(data[s].groups)) data[s].groups = [];
       if (!data[s].groupOrder) data[s].groupOrder = data[s].groups.map(g => g.id);
+      if (!Array.isArray(data[s].groupOrder)) data[s].groupOrder = data[s].groups.map(g => g.id);
       data[s].groups.forEach(g => {
         if (!g.type) g.type = 'generico';
         if (g.capofamiglia === undefined) g.capofamiglia = null;
+        if (!Array.isArray(g.guests)) g.guests = [];
         g.guests.forEach(gu => {
           if (gu.parentela === undefined) gu.parentela = '';
           migrateDiet(gu);

@@ -2,6 +2,9 @@
 node_modules/
 
 # File di lavoro locali, non pubblicati
+.claude/
+.agents/
+.codex/
 CLAUDE.md
 AGENTS.md
 avvia-dev.sh

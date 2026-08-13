@@ -38,7 +38,11 @@ export const DS = (() => {
   // (chi ha la versione più recente), non un semplice timestamp locale: è
   // sempre un numero assegnato dal server, mai calcolato dal client.
   function getRev(key) {
-    try { const all = JSON.parse(localStorage.getItem(REV_KEY)) || {}; return all[key] ?? 0; }
+    try {
+      const all = JSON.parse(localStorage.getItem(REV_KEY)) || {};
+      const rev = Number(all[key]);
+      return Number.isFinite(rev) ? rev : 0;
+    }
     catch(e) { return 0; }
   }
   function setRev(key, rev) {

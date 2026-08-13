@@ -258,14 +258,14 @@ export function mount(root) {
   function load() {
     const d = DS.get('ds_checklist');
     if (d) data = d;
-    if (!data.items) data.items = [];
+    if (!Array.isArray(data.items)) data.items = [];
     // Primo avvio (nessun dato salvato in locale): precarica la checklist con le
-    // attività ordinate per fase. Uso un timestamp "epoca" via applyRemote così,
+    // attività ordinate per fase. Uso rev 0 via applyRemote così,
     // se la sync trova una checklist già presente sul server, quella ha la
-    // precedenza (last-write-wins) e il seed non sovrascrive i dati reali.
+    // precedenza e il seed non sovrascrive i dati reali.
     if (d === null) {
       data.items = DEFAULTS.map(t => ({ ...t, id: uid(), scadenza:'', note:'' }));
-      DS.applyRemote('ds_checklist', data, '1970-01-01T00:00:00.000Z');
+      DS.applyRemote('ds_checklist', data, 0);
     }
   }
 

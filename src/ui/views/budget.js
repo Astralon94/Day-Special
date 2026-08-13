@@ -168,7 +168,7 @@ export function mount(root) {
   function load() {
     const d = DS.get('ds_budget');
     if (d) budget = d;
-    if (!budget.voci) budget.voci = [];
+    if (!Array.isArray(budget.voci)) budget.voci = [];
     $('#input-budget-totale').value = budget.totale || '';
   }
 
