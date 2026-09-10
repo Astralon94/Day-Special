@@ -1,16 +1,19 @@
-# Pubblica una release di Day Special al push di un tag `vX.Y.Z`.
+# Pubblica una release di Day Special.
 #
-# Il tag è la richiesta esplicita di pubblicazione: la produzione legge
-# `releases/latest/download/manifest.json` e si aggiorna da sola appena la
-# release esiste. Per questo il workflow si rifiuta di procedere se il tag non
-# corrisponde alla versione in package.json o se il bundle versionato
-# (public/index.html) non è allineato ai sorgenti.
+# Si avvia in due modi:
+#   1. push di un tag `vX.Y.Z` sul commit di release già in main;
+#   2. avvio manuale (workflow_dispatch) con la versione: il workflow crea lui
+#      il tag sul commit scelto e prosegue. Serve dagli ambienti che non possono
+#      spingere tag (es. sessioni cloud).
 #
-# Uso, dopo il merge del commit `Release X.Y.Z: ...` in main:
-#   git tag -a vX.Y.Z -m "nota mostrata nell'app"
-#   git push origin vX.Y.Z
-# Senza messaggio del tag, la nota viene dal soggetto del commit taggato
-# (senza il prefisso `Release X.Y.Z:`).
+# In entrambi i casi il workflow è la richiesta esplicita di pubblicazione: la
+# produzione legge `releases/latest/download/manifest.json` e si aggiorna da
+# sola appena la release esiste. Per questo si rifiuta di procedere se la
+# versione non corrisponde a package.json, se il tag esiste già o se il bundle
+# versionato (public/index.html) non è allineato ai sorgenti.
+#
+# Nota mostrata nell'app: il messaggio del tag annotato o l'input `note`;
+# in mancanza, il soggetto del commit taggato senza il prefisso `Release X.Y.Z:`.
 
 name: Release
 
@@ -18,6 +21,16 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versione da pubblicare (es. 0.3.8), uguale a package.json'
+        required: true
+        type: string
+      note:
+        description: 'Nota mostrata nell''app (vuota = soggetto del commit)'
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -26,7 +39,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del tag
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Node
@@ -35,22 +48,52 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
 
-      - name: Verifica che il tag corrisponda a package.json
+      - name: Determina versione e tag
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="v${INPUT_VERSION#v}"
+          else
+            TAG="$GITHUB_REF_NAME"
+          fi
+          VERSION="${TAG#v}"
           PKG_VERSION="$(node -p "require('./package.json').version")"
-          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
-            echo "::error::Il tag v$TAG_VERSION non corrisponde alla versione $PKG_VERSION in package.json"
+          if [ "$VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::La versione $VERSION non corrisponde alla versione $PKG_VERSION in package.json del commit selezionato"
             exit 1
           fi
-          echo "VERSION=$PKG_VERSION" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
 
       - name: Nota della release
+        env:
+          INPUT_NOTE: ${{ inputs.note }}
         run: |
-          # Tag annotato: messaggio del tag. Tag leggero: soggetto del commit taggato.
-          NOTE="$(git tag -l --format='%(contents:subject)' "$GITHUB_REF_NAME" | sed -E 's/^Release [^:]*: *//')"
+          NOTE=""
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            NOTE="$INPUT_NOTE"
+          elif [ "$(git cat-file -t "$TAG")" = "tag" ]; then
+            # Tag annotato: il suo messaggio.
+            NOTE="$(git tag -l --format='%(contents:subject)' "$TAG")"
+          fi
+          # Riserva: soggetto dell'ultimo commit non di merge (il commit `Release X.Y.Z: ...`).
+          [ -n "$NOTE" ] || NOTE="$(git log --no-merges -1 --format=%s)"
+          NOTE="$(printf '%s' "$NOTE" | sed -E 's/^Release [^:]*: *//')"
           echo "NOTE=$NOTE" >> "$GITHUB_ENV"
           echo "Nota: $NOTE"
+
+      - name: Crea il tag (solo avvio manuale)
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::Il tag $TAG esiste già: la versione $VERSION è già stata pubblicata"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "$NOTE"
+          git push origin "refs/tags/$TAG"
 
       - name: Dipendenze
         run: npm ci
@@ -61,7 +104,7 @@ jobs:
       - name: Verifica che il bundle versionato sia allineato ai sorgenti
         run: |
           if ! git diff --exit-code --quiet -- public/index.html; then
-            echo "::error::public/index.html non corrisponde alla build di src/: rigenera il bundle e committalo prima di taggare"
+            echo "::error::public/index.html non corrisponde alla build di src/: rigenera il bundle e committalo prima di pubblicare"
             git diff --stat -- public/index.html
             exit 1
           fi
@@ -73,7 +116,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" \
+          gh release create "$TAG" \
             "dist/manifest.json" \
             "dist/day-special-$VERSION.json.gz" \
             --repo "$GITHUB_REPOSITORY" \
