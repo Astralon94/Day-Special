@@ -21,10 +21,11 @@ Lingua del progetto: **italiano** (commenti, commit, UI, documentazione).
 - In un ambiente cloud non esistono: la produzione (`~/Day-Special`), i launcher
   `avvia-dev.sh`/`ferma-dev.sh`, la cartella `data/` con il DB reale, `AGENTS.md`.
   Sono tutti file locali ignorati da Git: non ricrearli e non aspettarti che ci siano.
-- In cloud `gh` non c'è: puoi preparare una release (bump, build, pacchetto, commit, PR),
-  ma non pubblicarla. La pubblicazione avviene dal Mac con `gh release create` oppure
-  con il push di un tag `vX.Y.Z` sul commit di release in `main`, che avvia
-  `.github/workflows/release.yml`.
+- In cloud `gh` non c'è e il push dei tag è rifiutato (403): puoi preparare una release
+  (bump, build, pacchetto, commit, PR) e, su richiesta esplicita, pubblicarla avviando
+  `.github/workflows/release.yml` con `workflow_dispatch` sul commit di release in `main`
+  (strumento GitHub `actions_run_trigger`, input `version` e `note`). Dal Mac valgono anche
+  `gh release create` e il push di un tag `vX.Y.Z`.
 
 ## Comandi di sviluppo e verifica
 
@@ -93,12 +94,13 @@ Lingua del progetto: **italiano** (commenti, commit, UI, documentazione).
   La versione viene da `package.json`; produce `dist/manifest.json` e
   `dist/day-special-<versione>.json.gz`. Il packager esclude `data/`, `scripts/`, `dist/`,
   `CLAUDE.md`, `AGENTS.md`, i launcher e tutto ciò che inizia con `.` (quindi `.claude/`).
-- **Non pubblicare release** (`gh release create` o push di un tag `v*`) e non fare bump
-  di versione senza richiesta esplicita: la produzione si aggiorna da sola quando vede una
-  release nuova. Il comando `/release` descrive la procedura completa.
-- Il workflow `.github/workflows/release.yml` si avvia al push di un tag `vX.Y.Z`: fallisce
-  se il tag non corrisponde a `package.json` o se `public/index.html` non è allineato a `src/`.
-  Il tag va messo sul commit di release già in `main`, con la nota nel messaggio del tag annotato.
+- **Non pubblicare release** (`gh release create`, push di un tag `v*` o avvio del workflow)
+  e non fare bump di versione senza richiesta esplicita: la produzione si aggiorna da sola
+  quando vede una release nuova. Il comando `/release` descrive la procedura completa.
+- Il workflow `.github/workflows/release.yml` si avvia al push di un tag `vX.Y.Z` o a mano
+  (`workflow_dispatch` solo su `main`, crea il tag da solo al termine): fallisce se la versione
+  non corrisponde a `package.json`, se il tag esiste già o se `public/index.html` non è
+  allineato a `src/`. Va avviato quando il commit di release è già in `main`.
 - Se una modifica cambia quanto descritto nel README, aggiornalo nello stesso commit,
   mantenendo uno stile pubblico senza domini o dettagli del setup personale.
 
