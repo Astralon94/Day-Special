@@ -15,8 +15,9 @@ Lingua del progetto: **italiano** (commenti, commit, UI, documentazione).
 - `npm ci` installa solo le devDependencies (Vite + `vite-plugin-singlefile`).
   Serve solo per `npm run build` e `npm run dev`; il server gira senza `node_modules`.
 - `.nvmrc` indica Node 22 per gli strumenti che lo rispettano; l'hook `SessionStart`
-  (`.claude/hooks/setup.sh`) avvisa se la versione è insufficiente e lancia `npm ci`
-  quando manca `node_modules`. Se vedi un avviso `[setup]` all'avvio, leggilo prima di agire.
+  (`.claude/hooks/setup.sh`) avvisa se la versione è insufficiente e installa le devDependencies:
+  `npm install` a ogni sessione remota (`CLAUDE_CODE_REMOTE=true`), `npm ci` in locale solo se
+  manca `node_modules`. Se vedi un avviso `[setup]` all'avvio, leggilo prima di agire.
 - In un ambiente cloud non esistono: la produzione (`~/Day-Special`), i launcher
   `avvia-dev.sh`/`ferma-dev.sh`, la cartella `data/` con il DB reale, `AGENTS.md`.
   Sono tutti file locali ignorati da Git: non ricrearli e non aspettarti che ci siano.
