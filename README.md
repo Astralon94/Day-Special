@@ -50,6 +50,12 @@ scarica il pacchetto, fa il backup dei file sostituiti e si riavvia.
 - Le release si costruiscono con `node scripts/build-update.mjs`, che produce
   `dist/manifest.json` e il pacchetto `dist/day-special-<versione>.json.gz` e
   suggerisce il comando `gh release create` da eseguire.
+- In alternativa, il workflow GitHub Actions `.github/workflows/release.yml`
+  pubblica la release da solo al push di un tag `vX.Y.Z`: verifica che il tag
+  corrisponda alla versione in `package.json` e che `public/index.html` sia
+  allineato ai sorgenti, poi costruisce il pacchetto e carica gli asset.
+  La nota mostrata nell'app viene dal messaggio del tag annotato
+  (`git tag -a vX.Y.Z -m "nota"`) o, per un tag leggero, dal soggetto del commit.
 
 ## Architettura
 
