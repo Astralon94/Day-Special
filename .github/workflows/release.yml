@@ -41,9 +41,10 @@ permissions:
 # versione aspetta la fine del primo e poi si ferma al controllo "tag già
 # esistente" invece di contendersi il tag. Versioni diverse non condividono il
 # gruppo, così nessuna resta esclusa dalla coda (GitHub tiene una sola
-# esecuzione in attesa per gruppo).
+# esecuzione in attesa per gruppo). L'input `version` è accettato con o senza
+# prefisso `v`: qui viene normalizzato a `vX.Y.Z`, come il nome del tag.
 concurrency:
-  group: release-${{ github.event_name == 'workflow_dispatch' && format('v{0}', inputs.version) || github.ref_name }}
+  group: release-${{ github.event_name == 'workflow_dispatch' && (startsWith(inputs.version, 'v') && inputs.version || format('v{0}', inputs.version)) || github.ref_name }}
   cancel-in-progress: false
 
 jobs:
