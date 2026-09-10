@@ -14,8 +14,10 @@ Procedura, da seguire nell'ordine:
 4. Esegui `node scripts/build-update.mjs --note "<nota>"` e riporta il numero di file e la dimensione del pacchetto.
    Se lo script avvisa che `public/index.html` è più vecchio di `src/`, ripeti il build.
 5. Se la release cambia quanto descritto nel `README.md`, aggiornalo nello stesso commit.
-6. Committa con messaggio `Release <versione>: <descrizione>` e mostra il comando `gh release create`
-   stampato dallo script.
+6. Committa con messaggio `Release <versione>: <descrizione>` e mostra i due modi per pubblicare:
+   il comando `gh release create` stampato dallo script, oppure, dopo il merge in `main`,
+   `git tag -a v<versione> -m "<nota>" && git push origin v<versione>` che avvia il workflow
+   `.github/workflows/release.yml`.
 
 **Fermati qui.** Non eseguire `gh release create`, non fare push e non creare tag senza richiesta esplicita:
 la produzione si aggiorna da sola non appena vede la release pubblicata.

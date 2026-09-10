@@ -1,0 +1,81 @@
+# Pubblica una release di Day Special al push di un tag `vX.Y.Z`.
+#
+# Il tag è la richiesta esplicita di pubblicazione: la produzione legge
+# `releases/latest/download/manifest.json` e si aggiorna da sola appena la
+# release esiste. Per questo il workflow si rifiuta di procedere se il tag non
+# corrisponde alla versione in package.json o se il bundle versionato
+# (public/index.html) non è allineato ai sorgenti.
+#
+# Uso, dopo il merge del commit `Release X.Y.Z: ...` in main:
+#   git tag -a vX.Y.Z -m "nota mostrata nell'app"
+#   git push origin vX.Y.Z
+# Senza messaggio del tag, la nota viene dal soggetto del commit taggato
+# (senza il prefisso `Release X.Y.Z:`).
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del tag
+        uses: actions/checkout@v4
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Verifica che il tag corrisponda a package.json
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$TAG_VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::Il tag v$TAG_VERSION non corrisponde alla versione $PKG_VERSION in package.json"
+            exit 1
+          fi
+          echo "VERSION=$PKG_VERSION" >> "$GITHUB_ENV"
+
+      - name: Nota della release
+        run: |
+          # Tag annotato: messaggio del tag. Tag leggero: soggetto del commit taggato.
+          NOTE="$(git tag -l --format='%(contents:subject)' "$GITHUB_REF_NAME" | sed -E 's/^Release [^:]*: *//')"
+          echo "NOTE=$NOTE" >> "$GITHUB_ENV"
+          echo "Nota: $NOTE"
+
+      - name: Dipendenze
+        run: npm ci
+
+      - name: Build del frontend
+        run: npm run build
+
+      - name: Verifica che il bundle versionato sia allineato ai sorgenti
+        run: |
+          if ! git diff --exit-code --quiet -- public/index.html; then
+            echo "::error::public/index.html non corrisponde alla build di src/: rigenera il bundle e committalo prima di taggare"
+            git diff --stat -- public/index.html
+            exit 1
+          fi
+
+      - name: Pacchetto di aggiornamento
+        run: node scripts/build-update.mjs --note "$NOTE"
+
+      - name: Pubblica la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/manifest.json" \
+            "dist/day-special-$VERSION.json.gz" \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Day-Special $VERSION" \
+            --notes "$NOTE"
