@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(node --version)",
+      "Bash(node --check:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run dev:*)",
+      "Bash(node scripts/build-update.mjs:*)",
+      "Bash(DS_DB=:memory: DS_UPDATE_URL= PORT=4435 node server.js:*)",
+      "Bash(PORT=4435 node server.js:*)",
+      "Bash(curl --fail http://localhost:4435/:*)",
+      "Bash(curl -s http://localhost:4435/:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(gh pr:*)",
+      "Bash(gh release list:*)",
+      "Bash(gh release view:*)"
+    ],
+    "ask": [
+      "Bash(gh release create:*)",
+      "Bash(gh release upload:*)",
+      "Bash(npm version:*)"
+    ],
+    "deny": [
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push --force-with-lease:*)",
+      "Bash(rm -rf data:*)",
+      "Bash(rm -r data:*)",
+      "Bash(node server.js)",
+      "Bash(npm start:*)",
+      "Read(./data/**)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "timeout": 180,
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 0; [ -d node_modules ] || npm ci --no-audit --no-fund --loglevel=error >/dev/null 2>&1 || echo '[setup] npm ci non riuscito: eseguilo a mano prima di npm run build'"
+          }
+        ]
+      }
+    ]
+  }
+}
