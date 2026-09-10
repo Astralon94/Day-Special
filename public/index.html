@@ -133,7 +133,7 @@
 
 <footer>
   <div>Day Special</div>
-  <div style="margin-top:4px">Sviluppato con ❤️ da Astralon94</div>
+  <div style="margin-top:4px">Sviluppato con ❤️ da Francesco</div>
 </footer>
 <div id="toast"></div>
 `;function Gt(V){const t=S=>V.querySelector(S);function H(){const S=R.get("ds_invitati");if(!S)return[];const j=[];return S.sposi&&S.sposi.guests&&S.sposi.guests.forEach(v=>j.push(v)),["sposo","sposa","comuni"].forEach(v=>{!S[v]||!S[v].groups||S[v].groups.forEach(r=>r.guests.forEach(x=>j.push(x)))}),j}function _(){const S=R.get("ds_programma"),j=t("#countdown");if(!S||!S.data){j.style.display="none";return}const v=new Date;v.setHours(0,0,0,0);const r=new Date(S.data+"T00:00:00"),x=Math.round((r-v)/864e5),N=t("#cd-num"),$=t("#cd-txt"),q=r.toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long",year:"numeric"});x>0?(N.textContent=x,$.textContent=(x===1?"giorno":"giorni")+" al matrimonio · "+q):x===0?(N.textContent="🎉",$.textContent="È oggi! Auguri!"):(N.textContent="💞",$.textContent="Sposati il "+q),j.style.display="inline-flex"}function z(S,j,v,r,x){return`<div class="dash-card">
