@@ -37,6 +37,12 @@ on:
 permissions:
   contents: write
 
+# Una sola pubblicazione alla volta: un secondo avvio aspetta la fine del primo
+# e poi si ferma al controllo "tag già esistente" invece di contendersi il tag.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -145,6 +151,13 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --title "Day-Special $VERSION" \
               --notes "$NOTE"; then
+            # gh crea una bozza, carica gli asset e poi pubblica: un errore a metà
+            # lascia una bozza che farebbe fallire ogni nuovo tentativo. La rimuovo,
+            # ma solo se è davvero una bozza (mai una release già pubblicata).
+            if [ "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>/dev/null)" = "true" ]; then
+              echo "::warning::Creazione della release fallita: rimuovo la bozza di $TAG"
+              gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes || true
+            fi
             if [ "$TAG_CREATO" = 1 ]; then
               echo "::warning::Creazione della release fallita: rimuovo il tag $TAG appena creato"
               git push --delete origin "refs/tags/$TAG" || true
