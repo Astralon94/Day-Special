@@ -52,12 +52,12 @@ scarica il pacchetto, fa il backup dei file sostituiti e si riavvia.
   suggerisce il comando `gh release create` da eseguire.
 - In alternativa, il workflow GitHub Actions `.github/workflows/release.yml`
   pubblica la release da solo: al push di un tag `vX.Y.Z`, oppure avviato a mano
-  da Actions (`workflow_dispatch`) indicando la versione, nel qual caso crea lui
-  il tag sul commit scelto. Verifica che la versione corrisponda a `package.json`,
-  che il tag non esista già e che `public/index.html` sia allineato ai sorgenti,
-  poi costruisce il pacchetto e carica gli asset. La nota mostrata nell'app viene
-  dal messaggio del tag annotato (`git tag -a vX.Y.Z -m "nota"`) o dall'input
-  `note`; in mancanza, dal soggetto del commit.
+  da Actions (`workflow_dispatch`, solo su `main`) indicando la versione, nel qual
+  caso crea lui il tag al termine. Verifica che la versione corrisponda a
+  `package.json`, che il tag non esista già e che `public/index.html` sia allineato
+  ai sorgenti, poi costruisce il pacchetto e carica gli asset. La nota mostrata
+  nell'app viene dal messaggio del tag annotato (`git tag -a vX.Y.Z -m "nota"`) o
+  dall'input `note`; in mancanza, dal soggetto del commit `Release X.Y.Z: ...`.
 
 ## Architettura
 

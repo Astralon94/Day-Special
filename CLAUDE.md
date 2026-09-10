@@ -98,9 +98,9 @@ Lingua del progetto: **italiano** (commenti, commit, UI, documentazione).
   e non fare bump di versione senza richiesta esplicita: la produzione si aggiorna da sola
   quando vede una release nuova. Il comando `/release` descrive la procedura completa.
 - Il workflow `.github/workflows/release.yml` si avvia al push di un tag `vX.Y.Z` o a mano
-  (`workflow_dispatch`, che crea il tag da solo): fallisce se la versione non corrisponde a
-  `package.json`, se il tag esiste già o se `public/index.html` non è allineato a `src/`.
-  Va avviato sul commit di release già in `main`.
+  (`workflow_dispatch` solo su `main`, crea il tag da solo al termine): fallisce se la versione
+  non corrisponde a `package.json`, se il tag esiste già o se `public/index.html` non è
+  allineato a `src/`. Va avviato quando il commit di release è già in `main`.
 - Se una modifica cambia quanto descritto nel README, aggiornalo nello stesso commit,
   mantenendo uno stile pubblico senza domini o dettagli del setup personale.
 
