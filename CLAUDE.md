@@ -99,8 +99,8 @@ Lingua del progetto: **italiano** (commenti, commit, UI, documentazione).
   quando vede una release nuova. Il comando `/release` descrive la procedura completa.
 - Il workflow `.github/workflows/release.yml` si avvia al push di un tag `vX.Y.Z` o a mano
   (`workflow_dispatch` solo su `main`, crea il tag da solo al termine): fallisce se la versione
-  non corrisponde a `package.json`, se il tag esiste già o se `public/index.html` non è
-  allineato a `src/`. Va avviato quando il commit di release è già in `main`.
+  non corrisponde a `package.json`, se esistono già il tag o una release (anche in bozza) o se
+  `public/index.html` non è allineato a `src/`. Va avviato quando il commit di release è già in `main`.
 - Se una modifica cambia quanto descritto nel README, aggiornalo nello stesso commit,
   mantenendo uno stile pubblico senza domini o dettagli del setup personale.
 
