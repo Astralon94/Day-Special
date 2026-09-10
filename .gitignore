@@ -1,11 +1,15 @@
 # Dipendenze
 node_modules/
 
-# File di lavoro locali, non pubblicati
+# Config Claude: versionata, tranne i file locali
+.claude/settings.local.json
+.claude/**/*.local.*
+CLAUDE.local.md
 .agents/
 .codex/
 AGENTS.md
-.claude/settings.local.json
+
+# File di lavoro locali, non pubblicati
 avvia-dev.sh
 ferma-dev.sh
 scripts/seed-from-export.mjs
