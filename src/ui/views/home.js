@@ -123,7 +123,7 @@ export const html = `
 
 <footer>
   <div>Day Special</div>
-  <div style="margin-top:4px">Sviluppato con ❤️ da Francesco Maria De Santis</div>
+  <div style="margin-top:4px">Sviluppato con ❤️ da Astralon94</div>
 </footer>
 <div id="toast"></div>
 `;
