@@ -52,7 +52,7 @@
           {
             "type": "command",
             "timeout": 180,
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" || exit 0; [ -d node_modules ] || npm ci --no-audit --no-fund --loglevel=error >/dev/null 2>&1 || echo '[setup] npm ci non riuscito: eseguilo a mano prima di npm run build'"
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/setup.sh"
           }
         ]
       }
