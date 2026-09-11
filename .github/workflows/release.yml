@@ -1,0 +1,178 @@
+# Pubblica una release di Day Special.
+#
+# Si avvia in due modi:
+#   1. push di un tag `vX.Y.Z` sul commit di release già in main;
+#   2. avvio manuale (workflow_dispatch) su main con la versione: il workflow
+#      crea lui il tag e prosegue. Serve dagli ambienti che non possono
+#      spingere tag (es. sessioni cloud).
+#
+# In entrambi i casi il workflow è la richiesta esplicita di pubblicazione: la
+# produzione legge `releases/latest/download/manifest.json` e si aggiorna da
+# sola appena la release esiste. Per questo si rifiuta di procedere se la
+# versione non corrisponde a package.json, se il tag o una release (anche in
+# bozza) esistono già, se l'avvio manuale non è su main o se il bundle
+# versionato (public/index.html) non è allineato ai sorgenti. Nell'avvio manuale il tag viene creato solo dopo
+# build, verifica e pacchetto, e rimosso se la creazione della release fallisce.
+#
+# Nota mostrata nell'app: il messaggio del tag annotato o l'input `note`;
+# in mancanza, il soggetto del commit `Release X.Y.Z: ...` senza il prefisso.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versione da pubblicare (es. 0.3.8), uguale a package.json'
+        required: true
+        type: string
+      note:
+        description: 'Nota mostrata nell''app (vuota = soggetto del commit di release)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+# Una sola pubblicazione alla volta per versione: un secondo avvio della stessa
+# versione aspetta la fine del primo e poi si ferma al controllo "tag già
+# esistente" invece di contendersi il tag. Versioni diverse non condividono il
+# gruppo, così nessuna resta esclusa dalla coda (GitHub tiene una sola
+# esecuzione in attesa per gruppo). L'input `version` è accettato con o senza
+# prefisso `v`: qui viene normalizzato a `vX.Y.Z`, come il nome del tag.
+concurrency:
+  group: release-${{ github.event_name == 'workflow_dispatch' && (startsWith(inputs.version, 'v') && inputs.version || format('v{0}', inputs.version)) || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Storia completa: serve per trovare il commit di release e leggere i tag.
+          fetch-depth: 0
+
+      - name: Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Determina versione e tag
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+              echo "::error::L'avvio manuale è consentito solo su main (ref selezionato: $GITHUB_REF)"
+              exit 1
+            fi
+            VERSION="${INPUT_VERSION#v}"
+          else
+            VERSION="${GITHUB_REF_NAME#v}"
+          fi
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Versione non valida: '$VERSION' (atteso X.Y.Z)"
+            exit 1
+          fi
+          TAG="v$VERSION"
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          if [ "$VERSION" != "$PKG_VERSION" ]; then
+            echo "::error::La versione $VERSION non corrisponde alla versione $PKG_VERSION in package.json del commit selezionato"
+            exit 1
+          fi
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "::error::Il tag $TAG esiste già: la versione $VERSION è già stata pubblicata"
+            exit 1
+          fi
+          # Nessuna release (nemmeno in bozza) deve già esistere per questo tag: così
+          # la pulizia finale può rimuovere solo una bozza creata da questa esecuzione.
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::Esiste già una release (o una bozza) per $TAG: rimuovila o cambia versione"
+            exit 1
+          fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Nota della release
+        env:
+          INPUT_NOTE: ${{ inputs.note }}
+        run: |
+          NOTE=""
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            NOTE="$INPUT_NOTE"
+          elif [ "$(git cat-file -t "$TAG")" = "tag" ]; then
+            # Tag annotato: il suo messaggio.
+            NOTE="$(git tag -l --format='%(contents:subject)' "$TAG")"
+          fi
+          if [ -z "$NOTE" ]; then
+            # Riserva: il commit `Release X.Y.Z: ...` di questa versione, altrimenti
+            # l'ultimo commit non di merge.
+            NOTE="$(git log --no-merges -1 --format=%s --grep="^Release $VERSION:" HEAD)"
+            [ -n "$NOTE" ] || NOTE="$(git log --no-merges -1 --format=%s HEAD)"
+          fi
+          NOTE="$(printf '%s' "$NOTE" | sed -E '1s/^Release [^:]*: *//')"
+          # Forma con delimitatore: la nota può contenere più righe.
+          DELIM="ds-note-$(date +%s%N)"
+          {
+            echo "NOTE<<$DELIM"
+            printf '%s\n' "$NOTE"
+            echo "$DELIM"
+          } >> "$GITHUB_ENV"
+          printf 'Nota: %s\n' "$NOTE"
+
+      - name: Dipendenze
+        run: npm ci
+
+      - name: Build del frontend
+        run: npm run build
+
+      - name: Verifica che il bundle versionato sia allineato ai sorgenti
+        run: |
+          if ! git diff --exit-code --quiet -- public/index.html; then
+            echo "::error::public/index.html non corrisponde alla build di src/: rigenera il bundle e committalo prima di pubblicare"
+            git diff --stat -- public/index.html
+            exit 1
+          fi
+
+      - name: Pacchetto di aggiornamento
+        run: node scripts/build-update.mjs --note "$NOTE"
+
+      - name: Crea il tag e pubblica la release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG_CREATO=0
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag -a "$TAG" -m "$NOTE"
+            git push origin "refs/tags/$TAG"
+            TAG_CREATO=1
+          fi
+          if ! gh release create "$TAG" \
+              "dist/manifest.json" \
+              "dist/day-special-$VERSION.json.gz" \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Day-Special $VERSION" \
+              --notes "$NOTE"; then
+            # gh crea una bozza, carica gli asset e poi pubblica: un errore a metà
+            # lascia una bozza che farebbe fallire ogni nuovo tentativo. La rimuovo,
+            # ma solo se è davvero una bozza (mai una release già pubblicata): il
+            # controllo iniziale garantisce che non esistesse prima di questa esecuzione.
+            if [ "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>/dev/null)" = "true" ]; then
+              echo "::warning::Creazione della release fallita: rimuovo la bozza di $TAG"
+              gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes || true
+            fi
+            if [ "$TAG_CREATO" = 1 ]; then
+              echo "::warning::Creazione della release fallita: rimuovo il tag $TAG appena creato"
+              git push --delete origin "refs/tags/$TAG" || true
+            fi
+            exit 1
+          fi
