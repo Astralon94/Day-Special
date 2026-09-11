@@ -90,6 +90,14 @@ Per provare la build reale servita dal server Node:
 npm run build && PORT=4435 node server.js
 ```
 
+Smoke test del server con database in memoria (non tocca `data/` e non
+controlla gli aggiornamenti): avvia `server.js` come processo figlio,
+interroga `/api/health` e `/api/data` e lo chiude da solo.
+
+```sh
+npm run smoke
+```
+
 L'app non ha autenticazione applicativa: è pensata per girare in una rete
 privata o dietro un proxy che si occupi dell'accesso.
 
