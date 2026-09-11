@@ -8,6 +8,7 @@ CLAUDE.local.md
 .agents/
 .codex/
 AGENTS.md
+CLAUDE.md
 
 # File di lavoro locali, non pubblicati
 avvia-dev.sh
