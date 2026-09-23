@@ -47,18 +47,48 @@ const json = (res, status, data) => {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(data));
 };
+// Body JSON di una richiesta. I chunk restano Buffer fino alla fine: decodificarli
+// uno per uno (`raw += chunk`) spezzerebbe i caratteri multibyte (accenti, emoji)
+// che cadono a cavallo di due chunk. Oltre MAX_BODY_BYTES si risolve subito con
+// BODY_TOO_LARGE senza accumulare altro: senza autenticazione, un body illimitato
+// è un modo banale per esaurire la memoria del server (e poi quella dei client,
+// a cui il documento verrebbe rimandato via SSE).
+const MAX_BODY_BYTES = 2 * 1024 * 1024;
+const BODY_TOO_LARGE = Symbol('body-too-large');
 const readBody = (req) => new Promise((resolve) => {
-  let raw = '';
-  req.on('data', (c) => { raw += c; });
-  req.on('end', () => { try { resolve(raw ? JSON.parse(raw) : {}); } catch { resolve(null); } });
+  const chunks = [];
+  let size = 0, done = false;
+  const finish = (v) => { if (!done) { done = true; resolve(v); } };
+  req.on('data', (c) => {
+    if (done) return;
+    size += c.length;
+    if (size > MAX_BODY_BYTES) { finish(BODY_TOO_LARGE); return; }
+    chunks.push(c);
+  });
+  req.on('end', () => {
+    const raw = Buffer.concat(chunks).toString('utf8');
+    try { finish(raw ? JSON.parse(raw) : {}); } catch { finish(null); }
+  });
+  // Connessione caduta a metà body: la promise non deve restare pendente.
+  req.on('error', () => finish(null));
+  req.on('close', () => finish(null));
 });
 
 // ---- Realtime (Server-Sent Events): sostituto locale di Supabase Realtime ----
 const sseClients = new Set();
-function broadcast(key, value, updated_at, rev) {
-  const payload = `event: change\ndata: ${JSON.stringify({ key, value, updated_at, rev })}\n\n`;
+// `origin` è l'id istanza del client che ha fatto la PUT (header X-DS-Client):
+// l'evento arriva anche a lui, e così può riconoscere l'eco e ignorarlo.
+function broadcast(key, value, updated_at, rev, origin) {
+  const payload = `event: change\ndata: ${JSON.stringify({ key, value, updated_at, rev, origin })}\n\n`;
   for (const res of sseClients) { try { res.write(payload); } catch {} }
 }
+// Heartbeat: un commento SSE ogni 25 s tiene viva la connessione attraverso
+// proxy e tunnel che chiudono gli stream inattivi (Cloudflare dopo ~100 s).
+const SSE_HEARTBEAT_MS = 25000;
+const heartbeat = setInterval(() => {
+  for (const res of sseClients) { try { res.write(': ping\n\n'); } catch {} }
+}, SSE_HEARTBEAT_MS);
+if (heartbeat.unref) heartbeat.unref();
 
 async function api(req, res, url) {
   const parts = url.pathname.split('/').filter(Boolean); // ['api', <resource>, <id>?]
@@ -78,12 +108,17 @@ async function api(req, res, url) {
   if (resource === 'documents' && id && method === 'PUT') {
     if (!DOC_KEYS.includes(id)) return json(res, 400, { error: 'Chiave non valida: ' + id });
     const b = await readBody(req);
+    if (b === BODY_TOO_LARGE) {
+      res.setHeader('Connection', 'close');
+      return json(res, 413, { error: `Documento troppo grande (massimo ${MAX_BODY_BYTES / 1024 / 1024} MB)` });
+    }
     if (b == null || typeof b.value !== 'object' || b.value === null) {
       return json(res, 400, { error: 'Body non valido: atteso { value }' });
     }
+    const origin = String(req.headers['x-ds-client'] || '').slice(0, 64);
     try {
       const { updated_at, rev } = put(id, b.value);
-      broadcast(id, b.value, updated_at, rev);
+      broadcast(id, b.value, updated_at, rev, origin);
       return json(res, 200, { updated_at, rev });
     } catch (e) { return json(res, 400, { error: String(e.message || e) }); }
   }

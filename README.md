@@ -81,8 +81,11 @@ incrementata dal server a ogni scrittura e usata dal client per il merge.
 
 - `GET /api/health` — stato e conteggi
 - `GET /api/data` — tutti i documenti (bootstrap del client)
-- `PUT /api/documents/:key` — upsert di un documento
-- `GET /api/stream` — Server-Sent Events con le modifiche degli altri dispositivi
+- `PUT /api/documents/:key` — upsert di un documento (body `{ value }`, massimo
+  2 MB; l'header opzionale `X-DS-Client` identifica l'istanza che scrive)
+- `GET /api/stream` — Server-Sent Events: un evento `change` per ogni PUT,
+  inviato a tutti i client compreso chi ha scritto (`origin` = `X-DS-Client`,
+  così il mittente riconosce e ignora l'eco); heartbeat ogni 25 s
 - `GET/POST /api/updates*` — controllo e installazione aggiornamenti
 
 ## Sviluppo
