@@ -135,10 +135,10 @@ export function mount(root) {
     const inv = DS.get('ds_invitati');
     if (!inv) return [];
     const out = [];
-    if (inv.sposi && inv.sposi.guests) inv.sposi.guests.forEach(guest => out.push(guest));
+    if (inv.sposi && Array.isArray(inv.sposi.guests)) inv.sposi.guests.forEach(guest => out.push(guest));
     ['sposo', 'sposa', 'comuni'].forEach(sec => {
-      if (!inv[sec] || !inv[sec].groups) return;
-      inv[sec].groups.forEach(g => g.guests.forEach(guest => out.push(guest)));
+      if (!inv[sec] || !Array.isArray(inv[sec].groups)) return;
+      inv[sec].groups.forEach(g => (Array.isArray(g.guests) ? g.guests : []).forEach(guest => out.push(guest)));
     });
     return out;
   }
@@ -204,9 +204,12 @@ export function mount(root) {
     }
 
     const t = DS.get('ds_tavoli');
-    if (t && (t.tavoli || []).length) {
+    if (t && Array.isArray(t.tavoli) && t.tavoli.length) {
+      // Come nella vista Tavoli: conta solo gli ospiti confermati (gli altri
+      // restano nel documento ma non occupano il posto).
+      const confermati = new Set(reali.filter(g => g.status === 'confermato').map(g => g.id));
       const posti = t.tavoli.reduce((s, x) => s + (x.posti || 0), 0);
-      const ass   = t.tavoli.reduce((s, x) => s + (x.guestIds || []).length, 0);
+      const ass   = t.tavoli.reduce((s, x) => s + (Array.isArray(x.guestIds) ? x.guestIds.filter(id => confermati.has(id)).length : 0), 0);
       cards.push(dashCard('🪑 Tavoli', t.tavoli.length, ass + ' / ' + posti + ' posti assegnati', posti ? (ass / posti) * 100 : 0));
       $('#stat-tavoli').textContent = `${t.tavoli.length} tavoli · ${ass} assegnati`;
     } else {

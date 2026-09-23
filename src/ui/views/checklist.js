@@ -1,4 +1,5 @@
 import { DS } from '../../state/storage.js';
+import { Sync } from '../../state/sync.js';
 import { App } from '../app.js';
 
 export const title = 'Checklist – Day Special';
@@ -259,13 +260,16 @@ export function mount(root) {
     const d = DS.get('ds_checklist');
     if (d) data = d;
     if (!Array.isArray(data.items)) data.items = [];
-    // Primo avvio (nessun dato salvato in locale): precarica la checklist con le
-    // attività ordinate per fase. Uso rev 0 via applyRemote così,
-    // se la sync trova una checklist già presente sul server, quella ha la
-    // precedenza e il seed non sovrascrive i dati reali.
-    if (d === null) {
+    // Primo avvio (nessun dato in locale): precarica la checklist con le
+    // attività ordinate per fase, ma solo DOPO il primo pull dal server. Prima
+    // il seed partiva subito con rev 0 e, se l'utente spuntava qualcosa mentre
+    // il pull era in corso, quella modifica veniva persa quando arrivava la
+    // checklist del server. Ora: se il server ne ha già una, arriva via sync e
+    // sostituisce il vuoto; se non ne ha, si semina e si fa push come modifica
+    // locale. Senza server raggiungibile resta il bottone "Template base".
+    if (d === null && Sync.pulled) {
       data.items = DEFAULTS.map(t => ({ ...t, id: uid(), scadenza:'', note:'' }));
-      DS.applyRemote('ds_checklist', data, 0);
+      DS.set('ds_checklist', data);
     }
   }
 
@@ -362,7 +366,7 @@ export function mount(root) {
       <div class="item-titolo">${esc(item.titolo)}</div>
       <div class="item-meta">
         ${item.categoria ? `<span class="cat-badge">${esc(item.categoria)}</span>` : ''}
-        <span class="prio-badge prio-${item.priorita}">${item.priorita}</span>
+        <span class="prio-badge prio-${esc(item.priorita)}">${esc(item.priorita)}</span>
         ${scadHtml}
       </div>
       ${item.note ? `<div class="item-note" title="${esc(item.note)}">${esc(item.note)}</div>` : ''}
@@ -439,6 +443,11 @@ export function mount(root) {
 
   load(); renderList();
   const onChange = e => { if (e.detail.remote && e.detail.key === 'ds_checklist') { load(); renderList(); } };
+  const onPulled = () => { if (DS.get('ds_checklist') === null) { load(); renderList(); } };
   window.addEventListener('ds:change', onChange);
-  return () => window.removeEventListener('ds:change', onChange);
+  window.addEventListener('ds:pulled', onPulled);
+  return () => {
+    window.removeEventListener('ds:change', onChange);
+    window.removeEventListener('ds:pulled', onPulled);
+  };
 }

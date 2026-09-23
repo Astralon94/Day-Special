@@ -26,10 +26,38 @@ export function mountRoute() {
   const root = document.getElementById('app');
   root.innerHTML = view.html;
   document.title = view.title || 'Day Special';
-  currentUnmount = view.mount(root) || null;
+  try {
+    currentUnmount = view.mount(root) || null;
+  } catch (e) {
+    // Un documento malformato (arrivato dal server o da un'altra versione)
+    // non deve lasciare la pagina a metà, senza header né sync: si mostra
+    // una vista di cortesia e si lascia l'app navigabile.
+    console.error('Errore nel montaggio della vista', currentRoute(), e);
+    currentUnmount = null;
+    root.innerHTML = errorHtml(e);
+  }
   App.initPage();
   Sync.onViewMounted();
   window.scrollTo(0, 0);
+}
+
+function errorHtml(e) {
+  const msg = App.esc(e && e.message ? e.message : String(e));
+  return `
+<header>
+  <a class="nav-back" href="#/">← Home</a>
+  <h1>Day <span>Special</span></h1>
+  <div class="header-actions"><button class="icon-btn" id="theme-toggle">🌙</button></div>
+</header>
+<div class="container container--narrow">
+  <div class="empty-state" style="text-align:left">
+    <p><strong>Questa sezione non si è aperta correttamente.</strong></p>
+    <p style="margin-top:8px">I dati sono al sicuro: la sincronizzazione con il server continua a funzionare.
+    Prova a ricaricare la pagina; se il problema persiste, segnala questo messaggio:</p>
+    <pre style="margin-top:8px;white-space:pre-wrap;font-size:.8rem;color:var(--muted)">${msg}</pre>
+    <p style="margin-top:12px"><button class="btn btn-primary" onclick="location.reload()">Ricarica</button></p>
+  </div>
+</div>`;
 }
 
 export function startRouter() {
