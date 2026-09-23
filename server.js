@@ -3,7 +3,7 @@
 // Le API restano aperte per chi raggiunge direttamente il server.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { extname, join, normalize, dirname } from 'node:path';
+import { extname, join, normalize, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getAll, put, counts } from './server/documents.js';
 import { backupDb } from './server/db.js';
@@ -187,7 +187,9 @@ async function serveStatic(req, res, url) {
     catch { res.writeHead(200, { 'Content-Type': MIME['.html'], 'Cache-Control': 'no-cache' }); return res.end(statusPage()); }
   }
   const filePath = normalize(join(PUBLIC, rel));
-  if (!filePath.startsWith(PUBLIC)) { res.writeHead(403); return res.end(); }
+  // Confronto con il separatore: il solo prefisso accetterebbe anche una
+  // cartella sorella che inizia con lo stesso nome (es. public-x/).
+  if (filePath !== PUBLIC && !filePath.startsWith(PUBLIC + sep)) { res.writeHead(403); return res.end(); }
   try {
     const data = await readFile(filePath);
     res.writeHead(200, { 'Content-Type': MIME[extname(filePath)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });

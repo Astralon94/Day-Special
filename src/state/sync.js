@@ -227,6 +227,7 @@ export const Sync = (() => {
   // il dato quando lo snapshot (più vecchio) viene riconciliato.
   let pulling = false;
   let pullPromise = null;
+  let pulled = false;          // almeno un pull completo riuscito da quando la pagina è aperta
   const buffered = [];
 
   function fullSync() {
@@ -255,6 +256,10 @@ export const Sync = (() => {
       pulling = false;
       while (buffered.length) handleRemoteChange(buffered.shift());
     }
+    pulled = true;
+    // Le viste che seminano dati di default (checklist) aspettano questo
+    // segnale: solo ora si sa se il server ha già qualcosa per quella chiave.
+    window.dispatchEvent(new CustomEvent('ds:pulled'));
     setIdleStatus();
   }
 
@@ -336,7 +341,7 @@ export const Sync = (() => {
     injectHeaderUI();
   }
 
-  return { init, onViewMounted, get status() { return status; }, get pending() { return pending.size; } };
+  return { init, onViewMounted, get status() { return status; }, get pending() { return pending.size; }, get pulled() { return pulled; } };
 })();
 
 if (typeof window !== 'undefined') window.Sync = Sync;

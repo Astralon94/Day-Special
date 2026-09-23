@@ -249,10 +249,19 @@ export function mount(root) {
 
   function normalizeTables() {
     const seen = new Set();
+    // Un ospite sta su un tavolo solo: dopo un merge concorrente (guestIds è
+    // un array di scalari, vince un lato intero) può comparire su due tavoli.
+    // Vince il primo tavolo nell'ordine della sala; i duplicati vengono tolti.
+    const seatedSomewhere = new Set();
     data.tavoli.forEach((t, i) => {
       if (!t.id || seen.has(t.id)) t.id = uid();
       seen.add(t.id);
       if (!Array.isArray(t.guestIds)) t.guestIds = [];
+      t.guestIds = t.guestIds.filter(id => {
+        if (typeof id !== 'string' || seatedSomewhere.has(id)) return false;
+        seatedSomewhere.add(id);
+        return true;
+      });
       t.posti = clamp(parseInt(t.posti, 10) || 10, 1, 50);
       delete t.nome;
       t.shape = tableShape(t);
@@ -274,23 +283,18 @@ export function mount(root) {
     if (!Array.isArray(data.tableOrder)) data.tableOrder = data.tavoli.map(t => t.id);
     ensureLayout();
     normalizeTables();
-    cleanupOrphans();
     if (selectedTid && !data.tavoli.some(t => t.id === selectedTid)) selectedTid = null;
   }
 
-  function cleanupOrphans() {
-    const validIds = new Set(getConfirmati().map(g => g.id));
-    let removed = 0;
-    data.tavoli.forEach(t => {
-      const before = (t.guestIds || []).length;
-      t.guestIds = (t.guestIds || []).filter(id => validIds.has(id));
-      removed += before - t.guestIds.length;
-    });
-    if (removed > 0) {
-      DS.set('ds_tavoli', data);
-      toast(removed + (removed === 1 ? ' ospite non più confermato rimosso dai tavoli' : ' ospiti non più confermati rimossi dai tavoli'));
-    }
-  }
+  // Ospiti effettivamente seduti a un tavolo: quelli confermati in Invitati.
+  // Chi non è (più) confermato resta scritto nel documento ma non si vede e
+  // non conta: se torna confermato ritrova il suo posto. Cancellarli e fare
+  // push da ogni dispositivo (com'era prima) era un'operazione distruttiva
+  // che, con un evento tavoli arrivato prima del relativo evento invitati,
+  // toglieva il posto a un ospite appena assegnato altrove.
+  let confirmedIds = new Set();
+  function refreshConfirmed() { confirmedIds = new Set(getConfirmati().map(g => g.id)); }
+  function seated(t) { return (t.guestIds || []).filter(id => confirmedIds.has(id)); }
 
   function getConfirmati() {
     const inv = DS.get('ds_invitati');
@@ -320,7 +324,7 @@ export function mount(root) {
 
   function getAssignedIds() {
     const ids = new Set();
-    data.tavoli.forEach(t => (t.guestIds || []).forEach(id => ids.add(id)));
+    data.tavoli.forEach(t => seated(t).forEach(id => ids.add(id)));
     return ids;
   }
 
@@ -391,7 +395,7 @@ export function mount(root) {
     data.tavoli.forEach(t => { t.guestIds = (t.guestIds || []).filter(id => id !== guestId); });
     const t = data.tavoli.find(t => t.id === tavoloId);
     if (!t) return;
-    if ((t.guestIds || []).length >= t.posti) { toast('Tavolo al completo'); renderAll(); return; }
+    if (seated(t).length >= t.posti) { toast('Tavolo al completo'); renderAll(); return; }
     t.guestIds.push(guestId);
     selectedTid = t.id;
     save(); renderAll();
@@ -507,7 +511,7 @@ export function mount(root) {
   }
 
   function seatDotsHtml(t) {
-    const occ = (t.guestIds || []).length;
+    const occ = seated(t).length;
     const n = Math.min(t.posti, MAX_SEAT_DOTS);
     // Se i posti superano il tetto di pallini, gli occupati scalano in proporzione.
     const filled = occ ? Math.max(1, Math.min(n, Math.round(occ / t.posti * n))) : 0;
@@ -532,9 +536,9 @@ export function mount(root) {
   }
 
   function buildRoomTable(t, sposiIds) {
-    const occupati = (t.guestIds || []).length;
+    const occupati = seated(t).length;
     const full = occupati >= t.posti;
-    const isSposi = (t.guestIds || []).some(id => sposiIds.has(id));
+    const isSposi = seated(t).some(id => sposiIds.has(id));
     const el = document.createElement('div');
     el.className = 'room-table shape-' + tableShape(t)
       + (full ? ' is-full' : '')
@@ -635,7 +639,7 @@ export function mount(root) {
     const t = data.tavoli.find(t => t.id === selectedTid);
     if (!t) { panel.classList.remove('show'); return; }
     panel.classList.add('show');
-    const occ = (t.guestIds || []).length;
+    const occ = seated(t).length;
     $('#selected-title').textContent = 'Tavolo ' + tableNumber(t);
     $('#selected-occ').textContent = occ + '/' + t.posti;
     $('#sel-posti').value = t.posti;
@@ -645,7 +649,7 @@ export function mount(root) {
 
     const wrap = $('#selected-guests');
     const gMap = guestMap();
-    const guests = (t.guestIds || []).map(id => gMap[id]).filter(Boolean);
+    const guests = seated(t).map(id => gMap[id]).filter(Boolean);
     if (!guests.length) {
       wrap.innerHTML = '<div class="selected-empty">Nessun invitato assegnato. Trascina qui gli ospiti dal pannello sotto.</div>';
       return;
@@ -667,7 +671,7 @@ export function mount(root) {
     }
     wrap.innerHTML = '';
     orderedTavoli().forEach(t => {
-      const occ = (t.guestIds || []).length;
+      const occ = seated(t).length;
       const liberi = Math.max(0, t.posti - occ);
       const item = document.createElement('div');
       item.className = 'table-list-item';
@@ -732,11 +736,11 @@ export function mount(root) {
     const g = getConfirmati().find(x => x.id === guestId);
     if (!g) return;
     let currentTid = null;
-    data.tavoli.forEach(t => { if ((t.guestIds || []).includes(guestId)) currentTid = t.id; });
+    data.tavoli.forEach(t => { if (seated(t).includes(guestId)) currentTid = t.id; });
     const ordered = orderedTavoli();
 
     const opts = ordered.map(t => {
-      const occ   = (t.guestIds || []).length;
+      const occ   = seated(t).length;
       const isCur = t.id === currentTid;
       const full  = occ >= t.posti && !isCur;
       return `<button class="sheet-opt ${isCur ? 'current' : ''}" data-tid="${t.id}" ${full ? 'disabled' : ''}>
@@ -776,6 +780,7 @@ export function mount(root) {
   }
 
   function renderAll() {
+    refreshConfirmed();
     renderRoom();
     renderTablesList();
     renderSelectedPanel();
@@ -808,7 +813,7 @@ export function mount(root) {
   load(); renderAll();
   if (!hadSavedLayout) fitRoom();
   const onChange = e => {
-    if (e.detail.key === 'ds_invitati') { cleanupOrphans(); renderAll(); }
+    if (e.detail.key === 'ds_invitati') renderAll();
     if (e.detail.remote && e.detail.key === 'ds_tavoli') { load(); renderAll(); }
   };
   window.addEventListener('ds:change', onChange);

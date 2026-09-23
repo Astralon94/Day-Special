@@ -189,10 +189,10 @@ export function mount(root) {
       return (guest.menu && m[guest.menu]) ? m[guest.menu] : (pr.adulto || 0);
     };
     const addGuest = guest => { if (!guest.formale && guest.status !== 'annullato') tot += unit(guest); };
-    if (inv.sposi && inv.sposi.guests) inv.sposi.guests.forEach(addGuest);
+    if (inv.sposi && Array.isArray(inv.sposi.guests)) inv.sposi.guests.forEach(addGuest);
     ['sposo','sposa','comuni'].forEach(sec => {
-      if (!inv[sec]) return;
-      inv[sec].groups.forEach(g => g.guests.forEach(addGuest));
+      if (!inv[sec] || !Array.isArray(inv[sec].groups)) return;
+      inv[sec].groups.forEach(g => (Array.isArray(g.guests) ? g.guests : []).forEach(addGuest));
     });
     return tot;
   }

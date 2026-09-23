@@ -43,7 +43,14 @@ dagli aggiornamenti.
 
 L'app si aggiorna da sola: dalla sezione **Impostazioni** controlla il
 `manifest.json` pubblicato nelle [release di questa repo](../../releases),
-scarica il pacchetto, fa il backup dei file sostituiti e si riavvia.
+scarica il pacchetto, fa il backup dei file sostituiti e si riavvia. Se la
+scrittura di un file fallisce a metà, i file già sostituiti vengono rimessi
+dal backup e l'aggiornamento è annullato.
+
+Il riavvio è delegato a un supervisore esterno: dopo l'installazione il server
+esce con codice **42** e deve essere rilanciato (con systemd, per esempio,
+`Restart=always` oppure `RestartForceExitStatus=42`). Senza supervisore il
+server resta spento dopo un aggiornamento.
 
 - La variabile d'ambiente `DS_UPDATE_URL` permette di puntare a un manifest
   diverso; se definita ma vuota, gli aggiornamenti sono disattivati.

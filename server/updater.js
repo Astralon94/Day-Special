@@ -108,20 +108,34 @@ export function applicaPacchetto(buf, { appDir = APP_DIR, dataDir = join(APP_DIR
   const backupDir = join(dataDir, 'updates-backup', stamp);
   mkdirSync(backupDir, { recursive: true });
   let scritti = 0, nuovi = 0;
+  const applicati = [];   // { rel, backup } in ordine di scrittura, per il rollback
   const scrivi = (rel, contenuto) => {
     const dest = join(appDir, rel);
+    let backup = null;
     if (existsSync(dest)) {
-      const b = join(backupDir, rel);
-      mkdirSync(dirname(b), { recursive: true });
-      copyFileSync(dest, b);
+      backup = join(backupDir, rel);
+      mkdirSync(dirname(backup), { recursive: true });
+      copyFileSync(dest, backup);
       scritti++;
     } else { nuovi++; }
     mkdirSync(dirname(dest), { recursive: true });
+    applicati.push({ rel, backup });
     writeFileSync(dest, contenuto);
   };
-  for (const rel of rels) scrivi(rel, files[rel]);
-  // binari (icone, ecc.): trasportati in base64 nel campo additivo filesB64
-  for (const rel of relsB64) scrivi(rel, Buffer.from(filesB64[rel], 'base64'));
+  try {
+    for (const rel of rels) scrivi(rel, files[rel]);
+    // binari (icone, ecc.): trasportati in base64 nel campo additivo filesB64
+    for (const rel of relsB64) scrivi(rel, Buffer.from(filesB64[rel], 'base64'));
+  } catch (e) {
+    // Scrittura fallita a metà (disco pieno, permessi): l'app non deve restare
+    // con file di due versioni diverse. Si rimettono i file sovrascritti dal
+    // backup e si tolgono quelli nuovi, in ordine inverso.
+    for (const { rel, backup } of applicati.reverse()) {
+      const dest = join(appDir, rel);
+      try { if (backup) copyFileSync(backup, dest); else rmSync(dest, { force: true }); } catch {}
+    }
+    throw new Error(`Aggiornamento non applicato (${e.message}): file ripristinati alla versione precedente`);
+  }
   // ritenzione: tieni gli ultimi 5 backup di aggiornamento
   try {
     const base = join(dataDir, 'updates-backup');
