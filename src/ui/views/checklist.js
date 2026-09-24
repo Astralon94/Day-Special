@@ -1,5 +1,4 @@
 import { DS } from '../../state/storage.js';
-import { Sync } from '../../state/sync.js';
 import { App } from '../app.js';
 
 export const title = 'Checklist – Day Special';
@@ -147,106 +146,7 @@ export const html = `
 `;
 
 // Checklist precompilata: 98 attività ordinate per fase temporale (dal più lontano al post-nozze).
-const DEFAULTS = [
-  { titolo:"Fissare una data approssimativa 🗓️", fase:"10/12 mesi prima", categoria:"Pianificazione", priorita:"media", stato:"done" },
-  { titolo:"Da soli o con l'aiuto di un wedding planner?", fase:"10/12 mesi prima", categoria:"Pianificazione", priorita:"media", stato:"done" },
-  { titolo:"Chi invitiamo? 💌", fase:"10/12 mesi prima", categoria:"Pianificazione", priorita:"media", stato:"done" },
-  { titolo:"Informare delle nozze 📣", fase:"10/12 mesi prima", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Quanto spenderemo? 💰", fase:"10/12 mesi prima", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere il luogo della cerimonia 🏰", fase:"10/12 mesi prima", categoria:"Cerimonia", priorita:"media", stato:"todo" },
-  { titolo:"Confermare giorno e ora della cerimonia", fase:"10/12 mesi prima", categoria:"Cerimonia", priorita:"media", stato:"todo" },
-  { titolo:"Come sarà il ricevimento di nozze? 🍾", fase:"10/12 mesi prima", categoria:"Banchetto", priorita:"media", stato:"todo" },
-  { titolo:"Prenotare la location per il ricevimento 🍽️", fase:"10/12 mesi prima", categoria:"Banchetto", priorita:"alta", stato:"todo" },
-  { titolo:"Prenotare il catering 🍝", fase:"10/12 mesi prima", categoria:"Banchetto", priorita:"alta", stato:"todo" },
-  { titolo:"Organizzare i tavoli degli invitati 👪", fase:"10/12 mesi prima", categoria:"Banchetto", priorita:"media", stato:"todo" },
-  { titolo:"Cercare il fotografo 📷", fase:"10/12 mesi prima", categoria:"Fotografia e video", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere a chi affidare la musica della cerimonia 🎻", fase:"10/12 mesi prima", categoria:"Musica", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere la musica per il ricevimento 💿", fase:"10/12 mesi prima", categoria:"Musica", priorita:"media", stato:"todo" },
-  { titolo:"Pensare ad attività e animazione per gli invitati 🎉", fase:"10/12 mesi prima", categoria:"Banchetto", priorita:"media", stato:"todo" },
-  { titolo:"Invitati che arrivano da lontano? Aiutateli a cercare un hotel 🏨", fase:"10/12 mesi prima", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere il fotografo 📷", fase:"10/12 mesi prima", categoria:"Fotografia e video", priorita:"alta", stato:"todo" },
-  { titolo:"Ingaggiare i musicisti 💃", fase:"10/12 mesi prima", categoria:"Musica", priorita:"alta", stato:"todo" },
-  { titolo:"Ordinare i Save the date", fase:"10/12 mesi prima", categoria:"Partecipazioni", priorita:"media", stato:"todo" },
-  { titolo:"Cercare destinazioni per la luna di miele! 🏖️", fase:"10/12 mesi prima", categoria:"Luna di miele", priorita:"media", stato:"todo" },
-  { titolo:"Cominciare a guardare gli abiti da sposa 👰🏻", fase:"7/9 mesi prima", categoria:"Sposa e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Comunicare la notizia al lavoro 📣", fase:"7/9 mesi prima", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Sbrigare le pratiche per il matrimonio civile", fase:"7/9 mesi prima", categoria:"Pratiche burocratiche", priorita:"alta", stato:"todo" },
-  { titolo:"Sbrigare le pratiche per il matrimonio religioso", fase:"7/9 mesi prima", categoria:"Pratiche burocratiche", priorita:"alta", stato:"todo" },
-  { titolo:"Scegliere fiori e decorazioni di nozze 🌸🌼", fase:"7/9 mesi prima", categoria:"Fiori e decorazioni", priorita:"media", stato:"todo" },
-  { titolo:"Pensare a qualche decorazione fatta a mano", fase:"7/9 mesi prima", categoria:"Bomboniere", priorita:"media", stato:"todo" },
-  { titolo:"Valutare i vari stili di bouquet 💐", fase:"7/9 mesi prima", categoria:"Fiori e decorazioni", priorita:"media", stato:"todo" },
-  { titolo:"Iniziare a pensare alle fedi! 💍", fase:"7/9 mesi prima", categoria:"Gioielleria", priorita:"media", stato:"todo" },
-  { titolo:"Prendere appuntamento per provare abiti da sposa 👰", fase:"7/9 mesi prima", categoria:"Sposa e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere se affittare o comprare l'abito da sposa", fase:"7/9 mesi prima", categoria:"Sposa e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Fare il punto della situazione", fase:"7/9 mesi prima", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Acquistare l'abito da sposa! 👰", fase:"7/9 mesi prima", categoria:"Sposa e accessori", priorita:"alta", stato:"todo" },
-  { titolo:"Iniziare le prove dell'abito da sposa", fase:"7/9 mesi prima", categoria:"Sposa e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Visitare agenzie per la luna di miele! ✈️", fase:"7/9 mesi prima", categoria:"Luna di miele", priorita:"media", stato:"todo" },
-  { titolo:"Inviare i Save the date", fase:"7/9 mesi prima", categoria:"Partecipazioni", priorita:"media", stato:"todo" },
-  { titolo:"Cercare le partecipazioni di nozze! 💌", fase:"4/6 mesi prima", categoria:"Partecipazioni", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere testimoni e damigelle d'onore", fase:"4/6 mesi prima", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Prenotare fiori e decorazioni 🌼", fase:"4/6 mesi prima", categoria:"Fiori e decorazioni", priorita:"alta", stato:"todo" },
-  { titolo:"Prenotare la luna di miele! ✈️", fase:"4/6 mesi prima", categoria:"Lista nozze", priorita:"alta", stato:"todo" },
-  { titolo:"Preparare i documenti e terminare le pratiche per il viaggio", fase:"4/6 mesi prima", categoria:"Luna di miele", priorita:"media", stato:"todo" },
-  { titolo:"Ordinare le partecipazioni!", fase:"4/6 mesi prima", categoria:"Partecipazioni", priorita:"alta", stato:"todo" },
-  { titolo:"Controllare la lista degli invitati e gli indirizzi!", fase:"4/6 mesi prima", categoria:"Partecipazioni", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere la vettura per gli sposi 🚘", fase:"4/6 mesi prima", categoria:"Trasporti", priorita:"media", stato:"todo" },
-  { titolo:"Come arriveranno gli invitati? 🚌", fase:"4/6 mesi prima", categoria:"Trasporti", priorita:"alta", stato:"todo" },
-  { titolo:"Cominciare a guardare acconciature da sposa 👱‍♀️", fase:"4/6 mesi prima", categoria:"Bellezza e benessere", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere il regime patrimoniale", fase:"4/6 mesi prima", categoria:"Pratiche burocratiche", priorita:"media", stato:"todo" },
-  { titolo:"Ritirare e consegnare le partecipazioni 📫", fase:"4/6 mesi prima", categoria:"Partecipazioni", priorita:"media", stato:"todo" },
-  { titolo:"Guardare vestiti da sposo", fase:"4/6 mesi prima", categoria:"Sposo e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Organizzare la festa per le pubblicazioni o promessa", fase:"4/6 mesi prima", categoria:"Altro", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere i regali per la promessa 💍⌚", fase:"4/6 mesi prima", categoria:"Altro", priorita:"media", stato:"todo" },
-  { titolo:"Acquistare l'abito da sposo 🤵", fase:"4/6 mesi prima", categoria:"Sposo e accessori", priorita:"alta", stato:"todo" },
-  { titolo:"Scegliere gli accessori per lo sposo 👞", fase:"4/6 mesi prima", categoria:"Sposo e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Creare il sito web del matrimonio 💻", fase:"4/6 mesi prima", categoria:"Altro", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere il menù per il ricevimento 🍽", fase:"4/6 mesi prima", categoria:"Banchetto", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere la torta nuziale 🍰", fase:"4/6 mesi prima", categoria:"Banchetto", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere gli accessori della sposa 👛", fase:"2/3 mesi prima", categoria:"Sposa e accessori", priorita:"alta", stato:"todo" },
-  { titolo:"Scegliere le scarpe da sposa 👠", fase:"2/3 mesi prima", categoria:"Sposa e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Cercare l'intimo per la sposa 👙", fase:"2/3 mesi prima", categoria:"Sposa e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Velo: sì o no? 👰", fase:"2/3 mesi prima", categoria:"Sposa e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Acquistare le fedi e scegliere la frase da incidere", fase:"2/3 mesi prima", categoria:"Gioielleria", priorita:"alta", stato:"todo" },
-  { titolo:"Scegliere le letture per la cerimonia 📖", fase:"2/3 mesi prima", categoria:"Cerimonia", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere decorazione e animazione per la festa", fase:"2/3 mesi prima", categoria:"Fiori e decorazioni", priorita:"media", stato:"todo" },
-  { titolo:"Cercare le bomboniere", fase:"2/3 mesi prima", categoria:"Bomboniere", priorita:"media", stato:"todo" },
-  { titolo:"Prenotare l'auto degli sposi 🚘", fase:"2/3 mesi prima", categoria:"Trasporti", priorita:"alta", stato:"todo" },
-  { titolo:"Prenotare l'hotel per la prima notte di nozze 🏩", fase:"2/3 mesi prima", categoria:"Altro", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere il make up artist 💄", fase:"2/3 mesi prima", categoria:"Bellezza e benessere", priorita:"alta", stato:"todo" },
-  { titolo:"Scegliere gli abiti per damigelle d'onore e paggetti", fase:"2/3 mesi prima", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Acquistare le bomboniere per gli invitati", fase:"2/3 mesi prima", categoria:"Bomboniere", priorita:"alta", stato:"todo" },
-  { titolo:"Cercare i regali per gli invitati speciali 👵👴🏻", fase:"2/3 mesi prima", categoria:"Bomboniere", priorita:"media", stato:"todo" },
-  { titolo:"Prendere appuntamenti per prove di trucco e acconciatura", fase:"2/3 mesi prima", categoria:"Bellezza e benessere", priorita:"media", stato:"todo" },
-  { titolo:"Prendere appuntamento in un centro estetico", fase:"2/3 mesi prima", categoria:"Bellezza e benessere", priorita:"media", stato:"todo" },
-  { titolo:"Controllare i menù", fase:"2/3 mesi prima", categoria:"Banchetto", priorita:"media", stato:"todo" },
-  { titolo:"Addio al nubilato/celibato 🎉", fase:"2/3 mesi prima", categoria:"Altro", priorita:"media", stato:"todo" },
-  { titolo:"Definire il programma e chiarire i dubbi sulla cerimonia 📔", fase:"2/3 mesi prima", categoria:"Cerimonia", priorita:"media", stato:"todo" },
-  { titolo:"Informare del programma i partecipanti alla cerimonia", fase:"2/3 mesi prima", categoria:"Cerimonia", priorita:"media", stato:"todo" },
-  { titolo:"Scegliere il bouquet e dare conferma al fiorista! 💐", fase:"2/3 mesi prima", categoria:"Fiori e decorazioni", priorita:"alta", stato:"todo" },
-  { titolo:"Ritirare le fedi", fase:"2/3 mesi prima", categoria:"Gioielleria", priorita:"media", stato:"todo" },
-  { titolo:"Quale sarà la colonna sonora delle vostre nozze? 🎶", fase:"2/3 mesi prima", categoria:"Musica", priorita:"media", stato:"todo" },
-  { titolo:"Chiudere la lista degli invitati", fase:"1 mese prima", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Controllare la disposizione dei tavoli", fase:"1 mese prima", categoria:"Banchetto", priorita:"media", stato:"todo" },
-  { titolo:"Consegnare al ristorante la piantina con la disposizione dei tavoli", fase:"1 mese prima", categoria:"Banchetto", priorita:"media", stato:"todo" },
-  { titolo:"Dare le ultime istruzioni agli invitati", fase:"1 mese prima", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Ultima prova dell'abito da sposa 👰", fase:"1 mese prima", categoria:"Sposa e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Ultima prova del vestito da sposo 🤵", fase:"1 mese prima", categoria:"Sposo e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Organizzare l'album di nozze condiviso 📱", fase:"1 mese prima", categoria:"Fotografia e video", priorita:"media", stato:"todo" },
-  { titolo:"Definire gli ultimi dettagli per la luna di miele", fase:"1 mese prima", categoria:"Luna di miele", priorita:"media", stato:"todo" },
-  { titolo:"Prendere appuntamento dal barbiere 💇‍♂️", fase:"2 settimane prima", categoria:"Bellezza e benessere", priorita:"media", stato:"todo" },
-  { titolo:"Ultima visita al centro estetico 💅", fase:"2 settimane prima", categoria:"Bellezza e benessere", priorita:"media", stato:"todo" },
-  { titolo:"Ritirare gli abiti", fase:"L'ultima settimana", categoria:"Sposa e accessori", priorita:"media", stato:"todo" },
-  { titolo:"Dare un ultimo sguardo alla lista degli invitati 🤞", fase:"L'ultima settimana", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Assicurarsi che tutto sia sotto controllo", fase:"L'ultima settimana", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Preparare le valigie e il kit d'emergenza", fase:"L'ultima settimana", categoria:"Luna di miele", priorita:"media", stato:"todo" },
-  { titolo:"Condividere con gli invitati l'app per le foto 📸", fase:"L'ultima settimana", categoria:"Pianificazione", priorita:"media", stato:"todo" },
-  { titolo:"Ritirare il bouquet", fase:"L'ultimo giorno", categoria:"Fiori e decorazioni", priorita:"media", stato:"todo" },
-  { titolo:"Prendersi un po' di tempo per rilassarsi 💆", fase:"L'ultimo giorno", categoria:"Bellezza e benessere", priorita:"media", stato:"todo" },
-  { titolo:"Ritirare/scaricare l'album di nozze", fase:"Dopo il matrimonio", categoria:"Fotografia e video", priorita:"media", stato:"todo" },
-  { titolo:"Recensire i fornitori delle vostre nozze ⭐", fase:"Dopo il matrimonio", categoria:"Altro", priorita:"media", stato:"todo" },
-  { titolo:"Preparare un biglietto o un video di ringraziamento per gli invitati ✍️", fase:"Dopo il matrimonio", categoria:"Partecipazioni", priorita:"media", stato:"todo" }
-];
+
 
 export function mount(root) {
   const $ = (sel) => root.querySelector(sel);
@@ -254,24 +154,10 @@ export function mount(root) {
 
   let data = { items: [] };
   let editId = null;
+  let editExpected = null;
 
-  function save() { DS.set('ds_checklist', data); }
-  function load() {
-    const d = DS.get('ds_checklist');
-    if (d) data = d;
-    if (!Array.isArray(data.items)) data.items = [];
-    // Primo avvio (nessun dato in locale): precarica la checklist con le
-    // attività ordinate per fase, ma solo DOPO il primo pull dal server. Prima
-    // il seed partiva subito con rev 0 e, se l'utente spuntava qualcosa mentre
-    // il pull era in corso, quella modifica veniva persa quando arrivava la
-    // checklist del server. Ora: se il server ne ha già una, arriva via sync e
-    // sostituisce il vuoto; se non ne ha, si semina e si fa push come modifica
-    // locale. Senza server raggiungibile resta il bottone "Template base".
-    if (d === null && Sync.pulled) {
-      data.items = DEFAULTS.map(t => ({ ...t, id: uid(), scadenza:'', note:'' }));
-      DS.set('ds_checklist', data);
-    }
-  }
+
+  function load() { data = DS.get('ds_checklist') || { items: [] }; }
 
   function updateProgress() {
     const all  = data.items.length;
@@ -377,15 +263,10 @@ export function mount(root) {
     return div;
   }
 
-  function cycleStato(id, el) {
-    const item = data.items.find(i => i.id === id);
-    if (!item) return;
-    const cycle = { todo:'wip', wip:'done', done:'todo' };
-    item.stato = cycle[item.stato] || 'todo';
-    save(); renderList();
-  }
+  async function cycleStato(id) { await DS.command('task.cycle', { id }); }
 
   function openForm(idata) {
+    editExpected = DS.revisions();
     editId = idata ? idata.id : null;
     $('#form-title').textContent = editId ? 'Modifica attività' : 'Nuova attività';
     $('#f-titolo').value    = idata?.titolo    || '';
@@ -400,12 +281,12 @@ export function mount(root) {
   }
   function closeForm() { $('#add-form').classList.remove('open'); editId = null; }
 
-  function saveItem() {
+  async function saveItem() {
     const titolo = $('#f-titolo').value.trim();
     if (!titolo) { toast('Inserisci il titolo'); return; }
     const wasEdit = !!editId;
     const obj = {
-      id:        editId || uid(),
+      id:        editId,
       titolo,
       fase:      $('#f-fase').value,
       categoria: $('#f-categoria').value,
@@ -414,40 +295,28 @@ export function mount(root) {
       scadenza:  $('#f-scadenza').value,
       note:      $('#f-note').value.trim()
     };
-    if (wasEdit) {
-      const i = data.items.findIndex(i => i.id === editId);
-      if (i >= 0) data.items[i] = obj;
-    } else {
-      data.items.push(obj);
-    }
-    save(); closeForm(); renderList(); toast(wasEdit ? 'Attività aggiornata' : 'Attività aggiunta');
+    const { id, ...values } = obj;
+    if (!await DS.command('task.save', { id: editId, values }, editExpected)) return;
+    closeForm(); toast(wasEdit ? 'Modifica salvata' : 'Elemento aggiunto');
   }
   function editItem(id) { openForm(data.items.find(i => i.id === id)); }
-  function deleteItem(id) {
-    if (!confirm('Eliminare questa attività?')) return;
-    data.items = data.items.filter(i => i.id !== id);
-    save(); renderList(); toast('Attività eliminata');
+  async function deleteItem(id) {
+    if (!confirm('Eliminare questo elemento?')) return;
+    if (await DS.command('task.delete', { id })) toast('Elemento eliminato');
   }
 
-  function addDefaults() {
-    if (!confirm('Aggiungere il template con le attività più comuni? Le attività esistenti non verranno eliminate.')) return;
-    const esistenti = new Set(data.items.map(i => i.titolo));
-    let added = 0;
-    DEFAULTS.forEach(d => {
-      if (!esistenti.has(d.titolo)) { data.items.push({ ...d, id: uid(), scadenza:'', note:'' }); added++; }
-    });
-    save(); renderList(); toast(added + ' attività aggiunte dal template');
+  async function addDefaults() {
+    if (!confirm('Aggiungere le attività mancanti del template?')) return;
+    const result = await DS.command('task.template');
+    if (result) toast(result.added + ' attività aggiunte');
   }
 
   Object.assign(window, { openForm, closeForm, saveItem, editItem, deleteItem, cycleStato, addDefaults, renderList });
 
   load(); renderList();
   const onChange = e => { if (e.detail.remote && e.detail.key === 'ds_checklist') { load(); renderList(); } };
-  const onPulled = () => { if (DS.get('ds_checklist') === null) { load(); renderList(); } };
   window.addEventListener('ds:change', onChange);
-  window.addEventListener('ds:pulled', onPulled);
   return () => {
     window.removeEventListener('ds:change', onChange);
-    window.removeEventListener('ds:pulled', onPulled);
   };
 }

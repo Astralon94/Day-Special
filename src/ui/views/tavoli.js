@@ -217,7 +217,7 @@ export function mount(root) {
   let hadSavedLayout = false;
   let printPrevLayout = null;
 
-  function save() { DS.set('ds_tavoli', data); }
+
   function tableShape(t) { return t.shape === 'rect' ? 'rect' : 'round'; }
   function clamp(n, min, max) { return Math.max(min, Math.min(max, n)); }
   function snapCoord(v) { return data.layout.snap ? Math.round(v / GRID) * GRID : Math.round(v); }
@@ -247,33 +247,7 @@ export function mount(root) {
     return { x: 220 + (i % cols) * 230, y: 190 + Math.floor(i / cols) * 210 };
   }
 
-  function normalizeTables() {
-    const seen = new Set();
-    // Un ospite sta su un tavolo solo: dopo un merge concorrente (guestIds è
-    // un array di scalari, vince un lato intero) può comparire su due tavoli.
-    // Vince il primo tavolo nell'ordine della sala; i duplicati vengono tolti.
-    const seatedSomewhere = new Set();
-    data.tavoli.forEach((t, i) => {
-      if (!t.id || seen.has(t.id)) t.id = uid();
-      seen.add(t.id);
-      if (!Array.isArray(t.guestIds)) t.guestIds = [];
-      t.guestIds = t.guestIds.filter(id => {
-        if (typeof id !== 'string' || seatedSomewhere.has(id)) return false;
-        seatedSomewhere.add(id);
-        return true;
-      });
-      t.posti = clamp(parseInt(t.posti, 10) || 10, 1, 50);
-      delete t.nome;
-      t.shape = tableShape(t);
-      t.rotation = clamp(parseInt(t.rotation, 10) || 0, 0, 330);
-      const pos = defaultPosition(i);
-      t.x = clamp(Number.isFinite(Number(t.x)) ? Number(t.x) : pos.x, 80, ROOM_W - 80);
-      t.y = clamp(Number.isFinite(Number(t.y)) ? Number(t.y) : pos.y, 80, ROOM_H - 80);
-    });
-    const valid = new Set(data.tavoli.map(t => t.id));
-    data.tableOrder = (Array.isArray(data.tableOrder) ? data.tableOrder : []).filter(id => valid.has(id));
-    data.tavoli.forEach(t => { if (!data.tableOrder.includes(t.id)) data.tableOrder.push(t.id); });
-  }
+
 
   function load() {
     const d = DS.get('ds_tavoli');
@@ -282,7 +256,7 @@ export function mount(root) {
     if (!Array.isArray(data.tavoli)) data.tavoli = [];
     if (!Array.isArray(data.tableOrder)) data.tableOrder = data.tavoli.map(t => t.id);
     ensureLayout();
-    normalizeTables();
+
     if (selectedTid && !data.tavoli.some(t => t.id === selectedTid)) selectedTid = null;
   }
 
@@ -334,49 +308,24 @@ export function mount(root) {
     if (f.classList.contains('open')) $('#f-posti').focus();
   }
 
-  function addTavolo() {
-    const posti = clamp(parseInt($('#f-posti').value, 10) || 10, 1, 50);
-    const shape = $('#f-shape').value === 'rect' ? 'rect' : 'round';
-    const viewport = $('#room-viewport');
-    const rect = viewport.getBoundingClientRect();
-    const cx = clamp((-data.layout.panX + rect.width / 2) / data.layout.zoom, 100, ROOM_W - 100);
-    const cy = clamp((-data.layout.panY + rect.height / 2) / data.layout.zoom, 100, ROOM_H - 100);
-    const t = { id: uid(), posti, shape, rotation: 0, x: snapCoord(cx), y: snapCoord(cy), guestIds: [] };
-    data.tavoli.push(t);
-    data.tableOrder.push(t.id);
-    selectedTid = t.id;
-    save(); renderAll(); toggleAddForm();
-    $('#f-shape').value = 'round';
-    toast('Tavolo ' + tableNumber(t) + ' creato');
+  async function addTavolo() {
+    const rect = $('#room-viewport').getBoundingClientRect();
+    const x = clamp((-data.layout.panX + rect.width / 2) / data.layout.zoom, 100, ROOM_W - 100);
+    const y = clamp((-data.layout.panY + rect.height / 2) / data.layout.zoom, 100, ROOM_H - 100);
+    const result = await DS.command('table.save', { values: { posti: Number($('#f-posti').value), shape: $('#f-shape').value, x: snapCoord(x), y: snapCoord(y) } });
+    if (result) { selectedTid = result.id; renderAll(); toggleAddForm(); }
   }
 
-  function deleteTavolo(id) {
+  async function deleteTavolo(id) {
     if (!confirm('Eliminare il tavolo? Gli ospiti torneranno non assegnati.')) return;
-    data.tavoli = data.tavoli.filter(t => t.id !== id);
-    data.tableOrder = data.tableOrder.filter(i => i !== id);
-    if (selectedTid === id) selectedTid = null;
-    save(); renderAll(); toast('Tavolo eliminato');
+    await DS.command('table.delete', { id });
   }
 
-  function resizeTavolo(id, val) {
-    const t = data.tavoli.find(t => t.id === id);
-    if (t) { t.posti = clamp(parseInt(val, 10) || 1, 1, 50); save(); renderAll(); }
-  }
+  async function resizeTavolo(id, val) { await DS.command('table.save', { id, values: { posti: Number(val) } }); }
 
-  function setTableShape(id, val) {
-    const t = data.tavoli.find(t => t.id === id);
-    if (!t) return;
-    t.shape = val === 'rect' ? 'rect' : 'round';
-    if (t.shape === 'round') t.rotation = 0;
-    save(); renderAll();
-  }
+  async function setTableShape(id, val) { await DS.command('table.save', { id, values: { shape: val } }); }
 
-  function rotateTable(id, val) {
-    const t = data.tavoli.find(t => t.id === id);
-    if (!t) return;
-    t.rotation = clamp(parseInt(val, 10) || 0, 0, 330);
-    save(); renderAll();
-  }
+  async function rotateTable(id, val) { await DS.command('table.save', { id, values: { rotation: Number(val) } }); }
 
   function selectTable(id, { center = false } = {}) {
     selectedTid = id;
@@ -384,22 +333,9 @@ export function mount(root) {
     renderAll();
   }
 
-  function removeGuest(tavoloId, guestId) {
-    const t = data.tavoli.find(t => t.id === tavoloId);
-    if (!t) return;
-    t.guestIds = t.guestIds.filter(id => id !== guestId);
-    save(); renderAll();
-  }
+  async function removeGuest(tavoloId, guestId) { await DS.command('table.unassign', { id: tavoloId, guest_id: guestId }); }
 
-  function assignGuest(tavoloId, guestId) {
-    data.tavoli.forEach(t => { t.guestIds = (t.guestIds || []).filter(id => id !== guestId); });
-    const t = data.tavoli.find(t => t.id === tavoloId);
-    if (!t) return;
-    if (seated(t).length >= t.posti) { toast('Tavolo al completo'); renderAll(); return; }
-    t.guestIds.push(guestId);
-    selectedTid = t.id;
-    save(); renderAll();
-  }
+  async function assignGuest(tavoloId, guestId) { await DS.command('table.assign', { id: tavoloId, guest_id: guestId }); }
 
   function updateSummary() {
     const confermati = getConfirmati();
@@ -442,7 +378,7 @@ export function mount(root) {
     data.layout.panX = Math.round(cx - wx * nz);
     data.layout.panY = Math.round(cy - wy * nz);
     data.layout.zoom = nz;
-    save(); setWorldTransform();
+    DS.command('table.layout', { values: data.layout }); setWorldTransform();
   }
 
   function fitRoom({ persist = true } = {}) {
@@ -452,7 +388,7 @@ export function mount(root) {
     data.layout.zoom = Math.round(zoom * 100) / 100;
     data.layout.panX = Math.round((rect.width - ROOM_W * data.layout.zoom) / 2);
     data.layout.panY = Math.round((rect.height - ROOM_H * data.layout.zoom) / 2);
-    if (persist) save();
+    if (persist) DS.command('table.layout', { values: data.layout });
     setWorldTransform();
   }
 
@@ -463,7 +399,7 @@ export function mount(root) {
     const rect = viewport.getBoundingClientRect();
     data.layout.panX = Math.round(rect.width / 2 - t.x * data.layout.zoom);
     data.layout.panY = Math.round(rect.height / 2 - t.y * data.layout.zoom);
-    save();
+    DS.command('table.layout', { values: data.layout });
   }
 
   /* In stampa la sala esce sempre intera: fit temporaneo sull'area di stampa
@@ -577,6 +513,7 @@ export function mount(root) {
     if (!t) return;
     selectedTid = id;
     const p = worldPoint(e);
+    const expected = DS.revisions();
     const pointerId = e.pointerId;
     const target = e.currentTarget;
     target.setPointerCapture(pointerId);
@@ -597,7 +534,7 @@ export function mount(root) {
       target.removeEventListener('pointermove', move);
       target.removeEventListener('pointerup', up);
       target.removeEventListener('pointercancel', up);
-      save();
+      DS.command('table.save', { id: t.id, values: { x: t.x, y: t.y } }, expected);
       if (!start.moved) renderAll(); else renderSelectedPanel();
     };
     target.addEventListener('pointermove', move);
@@ -612,6 +549,7 @@ export function mount(root) {
     const viewport = $('#room-viewport');
     viewport.classList.add('dragging');
     selectedTid = null;
+    const expected = DS.revisions();
     const pointerId = e.pointerId;
     viewport.setPointerCapture(pointerId);
     roomPointer = { x: e.clientX, y: e.clientY, panX: data.layout.panX, panY: data.layout.panY };
@@ -627,7 +565,7 @@ export function mount(root) {
       viewport.removeEventListener('pointerup', up);
       viewport.removeEventListener('pointercancel', up);
       roomPointer = null;
-      save(); renderSelectedPanel(); renderTablesList();
+      DS.command('table.layout', { values: data.layout }, expected); renderSelectedPanel(); renderTablesList();
     };
     viewport.addEventListener('pointermove', move);
     viewport.addEventListener('pointerup', up);
@@ -802,11 +740,11 @@ export function mount(root) {
   $('#btn-zoom-in').addEventListener('click', () => zoomRoom(0.1));
   $('#btn-zoom-out').addEventListener('click', () => zoomRoom(-0.1));
   $('#btn-fit-room').addEventListener('click', () => fitRoom());
-  $('#room-snap').addEventListener('change', e => { data.layout.snap = e.target.checked; save(); setWorldTransform(); });
+  $('#room-snap').addEventListener('change', e => { data.layout.snap = e.target.checked; DS.command('table.layout', { values: data.layout }); setWorldTransform(); });
   $('#btn-delete-selected').addEventListener('click', () => { if (selectedTid) deleteTavolo(selectedTid); });
   $('#sel-posti').addEventListener('blur', e => { if (selectedTid) resizeTavolo(selectedTid, e.target.value); });
   $('#sel-shape').addEventListener('change', e => { if (selectedTid) setTableShape(selectedTid, e.target.value); });
-  $('#sel-rotation').addEventListener('input', e => { if (selectedTid) rotateTable(selectedTid, e.target.value); });
+  $('#sel-rotation').addEventListener('change', e => { if (selectedTid) rotateTable(selectedTid, e.target.value); });
   window.addEventListener('beforeprint', onBeforePrint);
   window.addEventListener('afterprint', onAfterPrint);
 

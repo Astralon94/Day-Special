@@ -1,3 +1,4 @@
+import { DOC_KEYS } from '../../shared/docKeys.js';
 import { App } from '../app.js';
 
 export const title = 'Impostazioni – Day Special';
@@ -31,6 +32,11 @@ export const html = `
 </header>
 <div class="container container--narrow">
   <div class="set-card">
+    <h2>Dati del browser precedente</h2>
+    <p class="set-note">I dati della vecchia versione sono conservati in questo browser. Ora il database del server gestisce i salvataggi. Puoi esportare la copia precedente per verificare eventuali modifiche non inviate.</p>
+    <button class="btn btn-ghost" id="btn-legacy-export" data-readonly-action>Esporta copia precedente</button>
+  </div>
+  <div class="set-card">
     <h2>🔄 Aggiornamento software</h2>
     <div class="set-row">
       <span class="set-lbl">Versione installata</span>
@@ -58,6 +64,13 @@ export const html = `
 export function mount(root) {
   const $ = (sel) => root.querySelector(sel);
   let installing = false;
+  $('#btn-legacy-export').addEventListener('click', () => {
+    const saved = {};
+    for (const key of [...DOC_KEYS, 'ds_base', 'ds_rev']) { const value = localStorage.getItem(key); if (value !== null) saved[key] = value; }
+    const url = URL.createObjectURL(new Blob([JSON.stringify({ formato: 'day-special-browser-legacy', dati: saved }, null, 2)], { type: 'application/json' }));
+    const link = document.createElement('a'); link.href = url; link.download = 'day-special-copia-browser.json'; link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
 
   function showMsg(text, type) {
     const el = $('#s-msg');

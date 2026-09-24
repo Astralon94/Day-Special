@@ -41,7 +41,14 @@ export function fetchBuffer(url, { timeoutMs = 15000, redirects = 5 } = {}) {
       }
       if (r.statusCode !== 200) { r.resume(); return rej(new Error('HTTP ' + r.statusCode)); }
       const chunks = [];
-      r.on('data', (c) => chunks.push(c));
+      let size = 0;
+      r.on('error', rej);
+      r.on('aborted', () => rej(new Error('Download interrotto')));
+      r.on('data', (c) => {
+        size += c.length;
+        if (size > 32 * 1024 * 1024) { req.destroy(new Error('Download troppo grande')); return; }
+        chunks.push(c);
+      });
       r.on('end', () => res(Buffer.concat(chunks)));
     });
     req.on('error', rej);
@@ -87,7 +94,7 @@ export function pathAmmesso(rel) {
 // Estrae il pacchetto (Buffer gz) → { version, note, files:{...} }.
 export function leggiPacchetto(buf) {
   let obj;
-  try { obj = JSON.parse(gunzipSync(buf).toString('utf8')); }
+  try { obj = JSON.parse(gunzipSync(buf, { maxOutputLength: 64 * 1024 * 1024 }).toString('utf8')); }
   catch { throw new Error('Pacchetto di aggiornamento illeggibile o corrotto'); }
   if (!obj || typeof obj !== 'object' || !obj.files || typeof obj.files !== 'object') {
     throw new Error('Pacchetto senza elenco file');

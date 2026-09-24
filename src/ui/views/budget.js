@@ -163,8 +163,9 @@ export function mount(root) {
 
   let budget = { totale: 0, voci: [] };
   let editId = null;
+  let editExpected = null;
 
-  function save() { DS.set('ds_budget', budget); }
+
   function load() {
     const d = DS.get('ds_budget');
     if (d) budget = d;
@@ -172,43 +173,14 @@ export function mount(root) {
     $('#input-budget-totale').value = budget.totale || '';
   }
 
-  function saveBudgetTotale() {
-    budget.totale = parseFloat($('#input-budget-totale').value) || 0;
-    save(); updateSummary();
-  }
+  async function saveBudgetTotale() { await DS.command('budget.total', { value: Number($('#input-budget-totale').value) }); }
 
-  function getCateringCost() {
-    const inv = DS.get('ds_invitati');
-    const pr  = DS.get('ds_prices');
-    if (!inv || !pr) return null;
-    let tot = 0;
-    const unit = guest => {
-      if (guest.tipo === 'bambino') return pr.bambino || 0;
-      if (guest.tipo === 'neonato') return pr.neonato || 0;
-      const m = pr.adultoMenu || {};
-      return (guest.menu && m[guest.menu]) ? m[guest.menu] : (pr.adulto || 0);
-    };
-    const addGuest = guest => { if (!guest.formale && guest.status !== 'annullato') tot += unit(guest); };
-    if (inv.sposi && Array.isArray(inv.sposi.guests)) inv.sposi.guests.forEach(addGuest);
-    ['sposo','sposa','comuni'].forEach(sec => {
-      if (!inv[sec] || !Array.isArray(inv[sec].groups)) return;
-      inv[sec].groups.forEach(g => (Array.isArray(g.guests) ? g.guests : []).forEach(addGuest));
-    });
-    return tot;
-  }
+  function getCateringCost() { return DS.computed.cateringCost ?? null; }
   function refreshCateringHint() {
     const c = getCateringCost();
     $('#costo-catering').textContent = c !== null ? fmt(c) : '(nessun dato)';
   }
-  function importaCatering() {
-    const c = getCateringCost();
-    if (c === null) { toast('Nessun dato invitati trovato'); return; }
-    if (c === 0)    { toast('Il costo catering è € 0: imposta i prezzi del menù in Invitati'); return; }
-    const exists = budget.voci.find(v => v._catering);
-    if (exists) { exists.preventivo = c; save(); renderTable(); toast('Voce catering aggiornata'); return; }
-    budget.voci.push({ id: uid(), descrizione: 'Catering / Banchetto', categoria: 'Ricevimento', preventivo: c, pagato: 0, stato: 'da_pagare', note: 'Importato da sezione Invitati', _catering: true });
-    save(); renderTable(); toast('Catering aggiunto al budget');
-  }
+  async function importaCatering() { if (await DS.command('budget.catering')) toast('Catering aggiornato'); }
 
   function updateSummary() {
     const tot   = budget.totale || 0;
@@ -298,14 +270,10 @@ export function mount(root) {
     updateSummary();
   }
 
-  function updateField(id, field, val) {
-    const v = budget.voci.find(v => v.id === id);
-    if (!v) return;
-    v[field] = val;
-    save(); updateSummary();
-  }
+  async function updateField(id, field, val) { await DS.command('budget.save', { id, values: { [field]: val } }); }
 
   function openForm(data) {
+    editExpected = DS.revisions();
     editId = data ? data.id : null;
     $('#form-title').textContent = editId ? 'Modifica voce' : 'Nuova voce di spesa';
     $('#f-descrizione').value = data?.descrizione || '';
@@ -319,12 +287,12 @@ export function mount(root) {
   }
   function closeForm() { $('#add-form').classList.remove('open'); editId = null; }
 
-  function saveVoce() {
+  async function saveVoce() {
     const desc = $('#f-descrizione').value.trim();
     if (!desc) { toast('Inserisci una descrizione'); return; }
     const wasEdit = !!editId;
     const obj = {
-      id: editId || uid(),
+      id: editId,
       descrizione: desc,
       categoria:   $('#f-categoria').value,
       preventivo:  parseFloat($('#f-preventivo').value) || 0,
@@ -332,20 +300,15 @@ export function mount(root) {
       stato:       $('#f-stato').value,
       note:        $('#f-note').value.trim()
     };
-    if (wasEdit) {
-      const i = budget.voci.findIndex(v => v.id === editId);
-      if (i >= 0) budget.voci[i] = { ...budget.voci[i], ...obj };
-    } else {
-      budget.voci.push(obj);
-    }
-    save(); closeForm(); renderTable(); toast(wasEdit ? 'Voce aggiornata' : 'Voce aggiunta');
+    const { id, ...values } = obj;
+    if (!await DS.command('budget.save', { id: editId, values }, editExpected)) return;
+    closeForm(); toast(wasEdit ? 'Modifica salvata' : 'Elemento aggiunto');
   }
 
   function editVoce(id) { openForm(budget.voci.find(v => v.id === id)); }
-  function deleteVoce(id) {
-    if (!confirm('Eliminare questa voce?')) return;
-    budget.voci = budget.voci.filter(v => v.id !== id);
-    save(); renderTable(); toast('Voce eliminata');
+  async function deleteVoce(id) {
+    if (!confirm('Eliminare questo elemento?')) return;
+    if (await DS.command('budget.delete', { id })) toast('Elemento eliminato');
   }
 
   function exportCSV() {
@@ -363,7 +326,7 @@ export function mount(root) {
   }
 
   // ── Eventi (delega su tbody per gli input generati dinamicamente) ──
-  $('#input-budget-totale').addEventListener('input', saveBudgetTotale);
+  $('#input-budget-totale').addEventListener('change', saveBudgetTotale);
   $('#btn-importa-catering').addEventListener('click', importaCatering);
   $('#btn-open-form').addEventListener('click', () => openForm());
   $('#filter-cat').addEventListener('change', renderTable);
