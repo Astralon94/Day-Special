@@ -25,6 +25,8 @@ dispositivi e utilizzabili anche offline.
 ## Requisiti
 
 - Node.js **≥ 22.12.0** (per il modulo nativo `node:sqlite`).
+  Su Node 22.12 SQLite richiede `--experimental-sqlite`: i comandi npm di avvio
+  e verifica lo includono già; aggiungerlo anche avviando direttamente `server.js`.
 
 ## Avvio rapido
 

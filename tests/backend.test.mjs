@@ -55,7 +55,7 @@ test('HTTP: CAS atomico, client precedenti bloccati e URL malformato non fatale'
   const dir = isolatedApp();
   const probe = createServer(); probe.listen(0, '127.0.0.1'); await once(probe, 'listening');
   const port = probe.address().port; await new Promise(resolve => probe.close(resolve));
-  const child = spawn(process.execPath, [join(dir, 'server.js')], {
+  const child = spawn(process.execPath, ['--experimental-sqlite', join(dir, 'server.js')], {
     env: { ...process.env, DS_DB: ':memory:', DS_UPDATE_URL: '', PORT: String(port) }, stdio: ['ignore', 'pipe', 'pipe'],
   });
   let logs = ''; child.stdout.on('data', d => { logs += d; }); child.stderr.on('data', d => { logs += d; });

@@ -20,7 +20,7 @@ if (PORT === '4335') {
   process.exit(1);
 }
 
-const child = spawn(process.execPath, [join(APP, 'server.js')], {
+const child = spawn(process.execPath, ['--experimental-sqlite', join(APP, 'server.js')], {
   cwd: APP,
   env: { ...process.env, DS_DB: ':memory:', DS_UPDATE_URL: '', PORT },
   stdio: ['ignore', 'pipe', 'pipe'],
