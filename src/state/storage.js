@@ -71,8 +71,8 @@ export const DS = (() => {
       clearTimeout(timeout);
     }
   }
-  async function refresh() {
-    if (busy || outstanding) return;
+  async function refresh(internal = false) {
+    if ((busy && !internal) || outstanding) return;
     if (refreshPromise) return refreshPromise;
     const token = ++generation;
     refreshPromise = (async () => {
@@ -163,12 +163,14 @@ export const DS = (() => {
         App.toast(e.message);
       }
     } finally {
+      // La vista svuota/chiude il modulo solo al ritorno del comando.
+      // Mantieni il blocco anche durante le letture finali, evitando un nuovo ID per lo stesso clic.
+      if (!outstanding) {
+        await refreshPromise;
+        await refresh(true);
+      }
       busy = false;
       announce();
-    }
-    if (!outstanding) {
-      await refreshPromise;
-      await refresh();
     }
     if (!result) restoreViews();
     return route === location.hash ? result : null;

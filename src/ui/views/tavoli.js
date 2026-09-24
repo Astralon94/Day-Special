@@ -1,5 +1,6 @@
 import { DS } from '../../state/storage.js';
 import { App } from '../app.js';
+import { inlineEditor } from '../inlineEditor.js';
 
 export const title = 'Tavoli – Day Special';
 
@@ -249,7 +250,9 @@ export function mount(root) {
 
 
 
+  let editor;
   function load() {
+    if (editor?.deferRender()) return;
     const d = DS.get('ds_tavoli');
     if (d) data = d;
     hadSavedLayout = !!(d && d.layout);
@@ -573,6 +576,8 @@ export function mount(root) {
   }
 
   function renderSelectedPanel() {
+    if (editor?.deferRender()) return;
+    $('#sel-posti').dataset.id = selectedTid || '';
     const panel = $('#selected-panel');
     const t = data.tavoli.find(t => t.id === selectedTid);
     if (!t) { panel.classList.remove('show'); return; }
@@ -718,6 +723,7 @@ export function mount(root) {
   }
 
   function renderAll() {
+    if (editor?.deferRender()) return;
     refreshConfirmed();
     renderRoom();
     renderTablesList();
@@ -742,7 +748,10 @@ export function mount(root) {
   $('#btn-fit-room').addEventListener('click', () => fitRoom());
   $('#room-snap').addEventListener('change', e => { data.layout.snap = e.target.checked; DS.command('table.layout', { values: data.layout }); setWorldTransform(); });
   $('#btn-delete-selected').addEventListener('click', () => { if (selectedTid) deleteTavolo(selectedTid); });
-  $('#sel-posti').addEventListener('blur', e => { if (selectedTid) resizeTavolo(selectedTid, e.target.value); });
+  $('#sel-posti').dataset.act = 'table-capacity';
+  editor = inlineEditor({ container: root, revisions: DS.revisions, render: () => { load(); renderAll(); },
+    save: (target, expected) => DS.command('table.save', { id: target.dataset.id, values: { posti: Number(target.value) } }, expected),
+  });
   $('#sel-shape').addEventListener('change', e => { if (selectedTid) setTableShape(selectedTid, e.target.value); });
   $('#sel-rotation').addEventListener('change', e => { if (selectedTid) rotateTable(selectedTid, e.target.value); });
   window.addEventListener('beforeprint', onBeforePrint);
@@ -756,6 +765,7 @@ export function mount(root) {
   };
   window.addEventListener('ds:change', onChange);
   return () => {
+    editor.dispose();
     window.removeEventListener('ds:change', onChange);
     window.removeEventListener('beforeprint', onBeforePrint);
     window.removeEventListener('afterprint', onAfterPrint);

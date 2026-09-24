@@ -1,5 +1,6 @@
 import { DS } from '../../state/storage.js';
 import { App } from '../app.js';
+import { inlineEditor } from '../inlineEditor.js';
 
 export const title = 'Invitati – Day Special';
 
@@ -347,6 +348,7 @@ export function mount(root) {
   let collapsedGroups = new Set();
 
 
+  let editor;
   function load() { data = DS.get('ds_invitati'); prices = DS.get('ds_prices'); }
 
   function findGroup(sec, gid) {
@@ -629,6 +631,7 @@ export function mount(root) {
   }
 
   function renderSection(sec) {
+    if (editor?.deferRender()) return;
     const container = $('#groups-' + sec);
     container.innerHTML = '';
     const groups = orderedGroups(sec);
@@ -642,6 +645,7 @@ export function mount(root) {
   }
 
   function renderSposi() {
+    if (editor?.deferRender()) return;
     const container = $('#groups-sposi');
     container.innerHTML = '';
 
@@ -714,7 +718,7 @@ export function mount(root) {
       <button class="group-collapse" title="${isCollapsed ? 'Espandi la lista' : 'Comprimi la lista'}" onclick="toggleGroupCollapse('${sec}','${g.id}')">${isCollapsed ? '▸' : '▾'}</button>
       <div class="group-name-wrap">
         <input class="group-name-input" value="${escHtml(g.name)}"
-          onblur="renameGroup('${sec}','${g.id}',this)"
+          data-act="group-name" data-id="${g.id}"
           onkeydown="if(event.key==='Enter')this.blur()" />
         <button class="edit-btn" title="Rinomina il gruppo" onclick="focusGroupName(this)">✏️</button>
         ${typeBadge}
@@ -810,7 +814,7 @@ export function mount(root) {
         <span class="guest-drag" title="Trascina">⠿</span>
         ${isCapo ? '<span class="capo-marker" title="Referente">👑</span>' : ''}
         <input class="guest-name-input" value="${escHtml(guest.name)}"
-          onblur="updateGuestName('${sec}','${gid}','${guest.id}',this.value)"
+          data-act="guest-name" data-id="${guest.id}"
           onkeydown="if(event.key==='Enter')this.blur()" />
         <span class="status-dot status-${guest.status}" title="Stato invito"></span>
         <button class="guest-toggle" title="Opzioni invitato" onclick="toggleGuestActions(this)">⋯</button>
@@ -936,6 +940,7 @@ export function mount(root) {
   }
 
   function renderAll() {
+    if (editor?.deferRender()) return;
     renderSposi();
     SECTIONS.forEach(renderSection);
   }
@@ -949,9 +954,22 @@ export function mount(root) {
     updateGuestMenu, toggleCeliaco, toggleLattosio, toggleFormale, exportCSV,
   });
 
-  // Prezzi menù: salvataggio live (oninput) come nella pagina originale.
-  ['#p-adulto','#p-adulto-carne','#p-adulto-pesce','#p-adulto-vegetariano','#p-adulto-vegano','#p-bambino','#p-neonato']
-    .forEach(sel => $(sel).addEventListener('change', saveAndRefresh));
+  const priceFields = { 'p-adulto': 'adulto', 'p-bambino': 'bambino', 'p-neonato': 'neonato',
+    'p-adulto-carne': 'carne', 'p-adulto-pesce': 'pesce', 'p-adulto-vegetariano': 'vegetariano', 'p-adulto-vegano': 'vegano' };
+  for (const input of Object.keys(priceFields)) $('#' + input).dataset.act = 'price';
+  const refreshView = () => { if (editor?.deferRender()) return; load(); loadPriceInputs(); renderAll(); };
+  editor = inlineEditor({ container: root, revisions: DS.revisions, render: refreshView,
+    save: async (target, expected) => {
+      if (target.dataset.act === 'price') {
+        const field = priceFields[target.id], value = Number(target.value);
+        const values = target.id.startsWith('p-adulto-') ? { adultoMenu: { [field]: value } } : { [field]: value };
+        await DS.command('prices.set', { values }, expected);
+      } else {
+        const operation = target.dataset.act === 'group-name' ? 'group.patch' : 'guest.patch';
+        await DS.command(operation, { id: target.dataset.id, values: { name: target.value.trim() } }, expected);
+      }
+    },
+  });
 
   load();
   loadPriceInputs();
@@ -960,9 +978,9 @@ export function mount(root) {
   const onChange = e => {
     if (!e.detail.remote) return;
     if (e.detail.key === 'ds_invitati' || e.detail.key === 'ds_prices') {
-      load(); loadPriceInputs(); renderAll();
+      refreshView();
     }
   };
   window.addEventListener('ds:change', onChange);
-  return () => window.removeEventListener('ds:change', onChange);
+  return () => { editor.dispose(); window.removeEventListener('ds:change', onChange); };
 }

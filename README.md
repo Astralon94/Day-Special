@@ -143,4 +143,4 @@ database in memoria e copie temporanee dell'applicazione.
 
 [MIT](LICENSE)
 
-I documenti storici incompleti compatibili ricevono default non distruttivi; quelli non interpretabili sono segnalati e isolati, mantenendo operative le sezioni indipendenti. Le modifiche inline del Budget conservano la revisione iniziale e non vengono inviate dai render remoti.
+I documenti storici incompleti compatibili ricevono default non distruttivi; quelli non interpretabili sono segnalati e isolati, mantenendo operative le sezioni indipendenti. Le modifiche dirette di Budget, Invitati, Programma e capienza tavoli conservano la revisione iniziale e non vengono inviate dai render remoti.

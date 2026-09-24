@@ -1,5 +1,6 @@
 import { DS } from '../../state/storage.js';
 import { App } from '../app.js';
+import { inlineEditor } from '../inlineEditor.js';
 
 export const title = 'Programma – Day Special';
 
@@ -55,7 +56,7 @@ export const html = `
     <summary>📅 Data del matrimonio <span class="data-display" id="data-display" style="margin-left:auto;font-size:.9rem"></span></summary>
     <div class="date-bar collapse-inner">
       <label>Data:</label>
-      <input type="date" id="input-data" onchange="saveData()" />
+      <input type="date" id="input-data" data-act="event-date" />
     </div>
   </details>
   <div class="toolbar">
@@ -103,7 +104,9 @@ export function mount(root) {
   let editExpected = null;
 
 
+  let editor;
   function load() {
+    if (editor?.deferRender()) return;
     const d = DS.get('ds_programma');
     if (d) prog = d;
     if (!Array.isArray(prog.eventi)) prog.eventi = [];
@@ -170,6 +173,7 @@ export function mount(root) {
   }
 
   function renderTimeline() {
+    if (editor?.deferRender()) return;
     const wrap = $('#timeline-wrap');
     const list = orderedEventi();
     if (!list.length) {
@@ -200,7 +204,7 @@ export function mount(root) {
           <span class="event-drag" title="Trascina per riordinare">⠿</span>
           <div class="event-cat-dot" style="background:${col}"></div>
           <input class="event-titolo-input" value="${esc(e.titolo)}"
-            onblur="updateField('${e.id}','titolo',this.value)"
+            data-act="event-title" data-id="${e.id}"
             onkeydown="if(event.key==='Enter')this.blur()" />
           <span class="event-cat-badge" style="color:${col}">${esc(e.categoria)}</span>
         </div>
@@ -252,8 +256,13 @@ export function mount(root) {
 
   Object.assign(window, { saveData, openForm, closeForm, saveEvento, editEvento, deleteEvento, moveEvento, sortByTime, updateField });
 
+  editor = inlineEditor({ container: root, revisions: DS.revisions, render: () => { load(); renderTimeline(); },
+    save: (target, expected) => target.dataset.act === 'event-date'
+      ? DS.command('event.date', { value: target.value }, expected)
+      : DS.command('event.save', { id: target.dataset.id, values: { titolo: target.value.trim() } }, expected),
+  });
   load(); renderTimeline();
   const onChange = e => { if (e.detail.remote && e.detail.key === 'ds_programma') { load(); renderTimeline(); } };
   window.addEventListener('ds:change', onChange);
-  return () => window.removeEventListener('ds:change', onChange);
+  return () => { editor.dispose(); window.removeEventListener('ds:change', onChange); };
 }
