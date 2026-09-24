@@ -32,6 +32,9 @@ export function mountRoute() {
   root.innerHTML = view.html;
   document.title = view.title || 'Day Special';
   try {
+    const dependencies = { invitati: ['ds_invitati', 'ds_prices'], tavoli: ['ds_tavoli', 'ds_invitati'], budget: ['ds_budget'], fornitori: ['ds_fornitori'], programma: ['ds_programma'], checklist: ['ds_checklist'] };
+    const error = (dependencies[currentRoute()] || []).map(DS.documentError).find(Boolean);
+    if (error) throw new Error(error);
     currentUnmount = view.mount(root) || null;
   } catch (e) {
     // Un documento malformato (arrivato dal server o da un'altra versione)
@@ -57,7 +60,7 @@ function errorHtml(e) {
 <div class="container container--narrow">
   <div class="empty-state" style="text-align:left">
     <p><strong>Questa sezione non si è aperta correttamente.</strong></p>
-    <p style="margin-top:8px">I dati sono al sicuro: la sincronizzazione con il server continua a funzionare.
+    <p style="margin-top:8px">I dati originali sono conservati. Le altre sezioni restano disponibili.
     Prova a ricaricare la pagina; se il problema persiste, segnala questo messaggio:</p>
     <pre style="margin-top:8px;white-space:pre-wrap;font-size:.8rem;color:var(--muted)">${msg}</pre>
     <p style="margin-top:12px"><button class="btn btn-primary" onclick="location.reload()">Ricarica</button></p>

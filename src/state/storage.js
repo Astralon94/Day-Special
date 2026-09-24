@@ -37,7 +37,7 @@ export const DS = (() => {
     return Object.fromEntries(DOC_KEYS.map((k) => [k, snapshot?.documents[k]?.rev || 0]));
   }
   function apply(next) {
-    if (next?.protocol !== 2 || !DOC_KEYS.every((k) => next.documents?.[k]?.value))
+    if (next?.protocol !== 2 || !DOC_KEYS.every((k) => next.documents?.[k]?.value || next.documents?.[k]?.error))
       throw new Error('Risposta del server non valida');
     const before = snapshot;
     snapshot = copy(next);
@@ -184,6 +184,7 @@ export const DS = (() => {
       return copy(snapshot?.computed) || {};
     },
     revisions,
+    documentError: (key) => snapshot?.documents[key]?.error || '',
     refresh,
     command,
     recover,
