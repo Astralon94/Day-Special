@@ -41,8 +41,9 @@ export const Sync = (() => {
 
   let pushTimers = {};
   let pushAttempts = {};
-  let pushGen = {};            // contatore per chiave: distingue la modifica in volo da una più recente
   const pending = new Set();   // chiavi con modifiche locali non ancora confermate dal server
+  const inFlight = new Set();
+  const deferredRemote = new Map();
   let eventSource = null;
   let status = 'connecting'; // connecting | synced | syncing | offline | error
 
@@ -97,7 +98,7 @@ export const Sync = (() => {
 
   function queuePush(key) {
     pending.add(key);
-    pushGen[key] = (pushGen[key] || 0) + 1;
+    setStatus('syncing');
     pushAttempts[key] = 0;
     schedulePush(key, PUSH_DEBOUNCE_MS);
   }
@@ -112,44 +113,71 @@ export const Sync = (() => {
 
   async function pushKey(key) {
     clearTimeout(pushTimers[key]);
-    const value = DS.get(key);
-    if (value === null) { pending.delete(key); return; }
+    if (inFlight.has(key)) return;
+    if (DS.get(key) === null) { pending.delete(key); return; }
+    inFlight.add(key);
     pending.add(key);
-    const gen = pushGen[key] || 0;
     setStatus('syncing');
+    let retryMs = PUSH_DEBOUNCE_MS;
+    let failed = false;
     try {
+      // Anche i retry leggono lo stato corrente prima di inviare. La revisione
+      // attesa rende sicura la finestra fra questa GET e la PUT successiva.
+      const latest = await fetch('/api/documents/' + key, { cache: 'no-store' });
+      if (!latest.ok && latest.status !== 404) throw Object.assign(new Error('HTTP ' + latest.status), { status: latest.status });
+      const current = latest.status === 404 ? null : await latest.json();
+      if (current) reconcileRemote(key, current.value, current.rev, true);
+      const expectedRev = current?.rev || 0;
+      if (expectedRev < DS.getRev(key)) throw new Error('Snapshot server precedente alla revisione locale');
+      const value = DS.get(key);
+      if (current && DS.deepEqual(value, current.value)) {
+        pending.delete(key);
+        return;
+      }
       const res = await fetch('/api/documents/' + key, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'X-DS-Client': CLIENT_ID },
-        body: JSON.stringify({ value }),
+        body: JSON.stringify({ value, expected_rev: expectedRev }),
       });
-      if (!res.ok) {
-        const err = new Error('HTTP ' + res.status);
-        err.status = res.status;
-        throw err;
-      }
-      const { rev } = await res.json();
-      // Allinea il rev locale a quello autorevole restituito dal server.
-      if (rev != null) DS.setServerRev(key, rev);
-      // Ciò che abbiamo appena inviato è ora lo stato "concordato" col server:
-      // diventa la base per i futuri merge a 3 vie.
-      DS.setBase(key, value);
-      // Se nel frattempo è arrivata una modifica più recente, il suo timer è
-      // già armato e la chiave deve restare in sospeso.
-      if ((pushGen[key] || 0) === gen) pending.delete(key);
-      pushAttempts[key] = 0;
-      setIdleStatus();
-    } catch (error) {
-      console.warn('Sync push error', key, error);
-      setFailStatus();
-      // Un 4xx (chiave non valida, body troppo grande…) non si risolve
-      // riprovando: si avvisa e si aspetta la prossima modifica o riconnessione.
-      const s = error.status;
-      if (s >= 400 && s < 500 && s !== 408 && s !== 429) {
-        App.toast('⚠️ Il server ha rifiutato il salvataggio (' + error.message + ')');
+      if (res.status === 409) {
+        const { current: conflict } = await res.json();
+        if (conflict) reconcileRemote(key, conflict.value, conflict.rev, true);
+        // Nuovo tentativo seriale: nessun popup e nessuna scrittura forzata.
         return;
       }
-      if ((pushGen[key] || 0) === gen) schedulePush(key, retryDelay(++pushAttempts[key]));
+      if (!res.ok) throw Object.assign(new Error('HTTP ' + res.status), { status: res.status });
+      const { rev } = await res.json();
+      if (rev >= DS.getRev(key)) {
+        DS.setBase(key, value);
+        DS.setServerRev(key, rev);
+      }
+      if (DS.deepEqual(DS.get(key), DS.getBase(key))) pending.delete(key);
+      pushAttempts[key] = 0;
+    } catch (error) {
+      failed = true;
+      console.warn('Sync push error', key, error);
+      const status = error.status;
+      if (status >= 400 && status < 500 && status !== 408 && status !== 429) {
+        retryMs = null;
+        App.toast(status === 428 ? '⚠️ Aggiorna la pagina per continuare a salvare.' : '⚠️ Il server ha rifiutato il salvataggio (' + error.message + ')');
+      } else {
+        retryMs = retryDelay(++pushAttempts[key]);
+      }
+    } finally {
+      inFlight.delete(key);
+      const remote = deferredRemote.get(key);
+      deferredRemote.delete(key);
+      if (remote) {
+        try { reconcileRemote(key, remote.value, remote.rev); }
+        catch (error) {
+          console.warn('Sync riconciliazione differita', error);
+          failed = true;
+          pending.add(key);
+          retryMs = retryDelay(++pushAttempts[key]);
+        }
+      }
+      if (pending.has(key) && retryMs !== null) schedulePush(key, retryMs);
+      if (failed) setFailStatus(); else setIdleStatus();
     }
   }
 
@@ -157,58 +185,43 @@ export const Sync = (() => {
   // Il "chi vince" tra campi scalari discordi è deciso dal `rev` (contatore
   // monotòno assegnato dal server), non dall'orologio del dispositivo: stesso
   // segnale di controllo delle modifiche concorrenti usato dalle Zen-Apps,
-  // applicato per documento invece che con un rifiuto/409 — qui il contenuto
-  // si fonde sempre in automatico (merge3), non si chiede mai all'utente di
-  // scegliere.
+  // applicato per documento: anche un conflitto 409 si risolve con merge3,
+  // senza chiedere all'utente di scegliere o forzare la scrittura.
   // Ritorna true se il dato LOCALE è cambiato (per decidere il toast/re-render).
-  function reconcileRemote(key, remoteValue, remoteRev) {
-    const local = DS.get(key);
-
-    if (local === null) {
-      DS.applyRemote(key, remoteValue, remoteRev);
-      DS.setBase(key, remoteValue);
-      return true;
-    }
-
-    if (DS.deepEqual(remoteValue, local)) {
-      DS.setBase(key, local);
-      DS.setRev(key, remoteRev);
+  function reconcileRemote(key, remoteValue, remoteRev, duringPush = false) {
+    // Gli snapshot vecchi non possono far regredire né contenuto né metadati.
+    if (!Number.isSafeInteger(remoteRev) || remoteRev < DS.getRev(key)) return false;
+    if (inFlight.has(key) && !duringPush) {
+      const previous = deferredRemote.get(key);
+      if (!previous || remoteRev >= previous.rev) deferredRemote.set(key, { value: remoteValue, rev: remoteRev });
       return false;
     }
-
+    const local = DS.get(key);
     const base = DS.getBase(key);
     const preferRemote = remoteRev > DS.getRev(key);
-
-    if (base === null) {
-      if (preferRemote) {
-        DS.applyRemote(key, remoteValue, remoteRev);
-        DS.setBase(key, remoteValue);
-        return true;
-      }
-      DS.set(key, local);
-      return false;
+    const merged = local === null ? remoteValue
+      : base === null ? (preferRemote ? remoteValue : local)
+      : DS.merge3(base, local, remoteValue, preferRemote);
+    const changed = !DS.deepEqual(merged, local);
+    const dirty = !DS.deepEqual(merged, remoteValue);
+    if (changed) {
+      if (dirty) DS.set(key, merged);
+      else DS.applyRemote(key, merged, remoteRev);
+      // Una scrittura locale fallita non deve avanzare la base del merge.
+      if (!DS.deepEqual(DS.get(key), merged)) throw new Error('Aggiornamento locale non salvato');
     }
-
-    const merged = DS.merge3(base, local, remoteValue, preferRemote);
-    const changedLocally    = !DS.deepEqual(merged, local);
-    const differsFromRemote = !DS.deepEqual(merged, remoteValue);
-
-    if (changedLocally && !differsFromRemote) {
-      DS.applyRemote(key, merged, remoteRev);
-      DS.setBase(key, merged);
-      return true;
-    }
-    if (changedLocally) {
-      DS.set(key, merged);
-      return true;
-    }
-    if (differsFromRemote) {
-      DS.set(key, merged);
-      return false;
-    }
-    DS.setBase(key, merged);
+    // La base è sempre lo snapshot remoto osservato, non il risultato del merge
+    // ancora da inviare: altrimenti le aggiunte remote possono risorgere o sparire.
+    DS.setBase(key, remoteValue);
     DS.setRev(key, remoteRev);
-    return false;
+    if (dirty) {
+      pending.add(key);
+      if (!inFlight.has(key)) schedulePush(key, PUSH_DEBOUNCE_MS);
+    } else {
+      pending.delete(key);
+      clearTimeout(pushTimers[key]);
+    }
+    return changed;
   }
 
   // Un evento SSE (già decodificato). L'eco del proprio push viene ignorato:
@@ -268,18 +281,17 @@ export const Sync = (() => {
     if (eventSource) { eventSource.close(); eventSource = null; }
     const es = new EventSource('/api/stream');
     eventSource = es;
-    let opened = false;
     es.addEventListener('change', (ev) => {
       let r;
       try { r = JSON.parse(ev.data); } catch { return; }
       if (pulling) { buffered.push(r); return; }
-      handleRemoteChange(r);
+      try { handleRemoteChange(r); } catch (error) { console.warn('Sync evento remoto', error); setFailStatus(); scheduleStart(); }
     });
     es.onopen = () => {
       // Il browser riapre lo stream da solo dopo una caduta: al riaggancio
       // recuperiamo ciò che è successo nel frattempo e riproviamo i push sospesi.
-      if (opened) resync();
-      opened = true;
+      // Anche la prima apertura recupera la finestra fra pull e sottoscrizione.
+      resync();
     };
     es.onerror = () => {
       // Il browser riprova automaticamente la connessione SSE; riflettiamo lo

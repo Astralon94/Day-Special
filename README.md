@@ -24,7 +24,7 @@ dispositivi e utilizzabili anche offline.
 
 ## Requisiti
 
-- Node.js **≥ 22.5** (per il modulo nativo `node:sqlite`).
+- Node.js **≥ 22.12.0** (per il modulo nativo `node:sqlite`).
 
 ## Avvio rapido
 
@@ -83,14 +83,33 @@ server resta spento dopo un aggiornamento.
 Il modello dati è una singola tabella key-value documentale: ogni sezione
 dell'app è un documento JSON opaco per il server, con una revisione (`rev`)
 incrementata dal server a ogni scrittura e usata dal client per il merge.
+Le scritture richiedono la revisione attesa: controllo e aggiornamento avvengono
+nella stessa transazione SQLite. In caso di concorrenza il client riconcilia
+automaticamente il documento e riprova. Per ogni documento invia una sola
+scrittura alla volta, preceduta da una lettura aggiornata anche nei retry.
+Gli eventi con revisioni superate vengono ignorati; l'apertura dello stream,
+compresa la prima, recupera lo stato completo.
+
+Dopo questo aggiornamento, le pagine già aperte con il vecchio client devono
+essere ricaricate: le loro scritture senza revisione vengono rifiutate con 428,
+preservando le modifiche presenti nel browser.
+
+I backup usano `VACUUM INTO` per includere le scritture nel WAL anche con lettori
+attivi. Lo snapshot viene verificato con `integrity_check` e pubblicato solo
+se integro. Un errore di backup viene registrato senza invalidare una scrittura
+già confermata; i backup restano soggetti alla ritenzione di 20 copie.
 
 ### API
 
 - `GET /api/health` — stato e conteggi
 - `GET /api/data` — tutti i documenti (bootstrap del client)
-- `PUT /api/documents/:key` — upsert di un documento (body `{ value }`, massimo
+- `GET /api/documents/:key` — documento e revisione correnti, oppure 404
+- `PUT /api/documents/:key` — scrittura condizionata (body `{ value, expected_rev }`, massimo
   2 MB; l'header opzionale `X-DS-Client` identifica l'istanza che scrive)
-- `GET /api/stream` — Server-Sent Events: un evento `change` per ogni PUT,
+  La revisione attesa è 0 per una nuova chiave. Successo: `{ updated_at, rev }`;
+  conflitto: HTTP 409 con `{ error, current }`, senza scrittura né evento SSE.
+  Revisione assente o non valida: HTTP 428.
+- `GET /api/stream` — Server-Sent Events: un evento `change` per ogni PUT riuscita,
   inviato a tutti i client compreso chi ha scritto (`origin` = `X-DS-Client`,
   così il mittente riconosce e ignora l'eco); heartbeat ogni 25 s
 - `GET/POST /api/updates*` — controllo e installazione aggiornamenti
@@ -119,6 +138,16 @@ npm run smoke
 
 L'app non ha autenticazione applicativa: è pensata per girare in una rete
 privata o dietro un proxy che si occupi dell'accesso.
+
+Verifiche di regressione con il test runner integrato di Node:
+
+```sh
+npm test
+```
+
+I test coprono retry, conflitti e richieste sovrapposte con rete simulata,
+recupero SSE, API HTTP e backup con lettori SQLite attivi. Usano esclusivamente
+database in memoria e copie temporanee dell'applicazione.
 
 ## Licenza
 

@@ -1,6 +1,7 @@
 // ============ Data layer — node:sqlite (nessuna dipendenza esterna) ============
+import { randomUUID } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync, existsSync, copyFileSync, readdirSync, unlinkSync } from 'node:fs';
+import { mkdirSync, existsSync, renameSync, readdirSync, unlinkSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -19,8 +20,8 @@ db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
 // `rev` è un contatore monotòno per chiave, incrementato dal server ad ogni
 // scrittura: è il segnale usato per il controllo delle modifiche concorrenti
 // (di chi è la versione più recente) — più robusto di un confronto sugli
-// orologi dei singoli dispositivi. Non blocca le scritture (nessun 409): la
-// fusione dei contenuti resta il merge a 3 vie lato client.
+// orologi dei singoli dispositivi. La revisione attesa protegge le scritture;
+// i conflitti 409 vengono fusi automaticamente dal client.
 db.exec(`
   CREATE TABLE IF NOT EXISTS documents (
     key        TEXT PRIMARY KEY,
@@ -47,15 +48,29 @@ export function backupDb({ force = false } = {}) {
   if (!onDisk || !existsSync(DB_PATH)) return null;
   const now = Date.now();
   if (!force && now - lastBackupAt < MIN_BACKUP_INTERVAL) return null;
-  lastBackupAt = now;
-  try { db.exec('PRAGMA wal_checkpoint(TRUNCATE);'); } catch {}
   const dir = join(DATA_DIR, 'backups');
-  mkdirSync(dir, { recursive: true });
-  const dest = join(dir, `day-special-${stamp()}.db`);
-  try { copyFileSync(DB_PATH, dest); } catch { return null; }
+  const dest = join(dir, `day-special-${stamp()}-${randomUUID()}.db`);
+  const temporary = dest + '.tmp';
+  try {
+    mkdirSync(dir, { recursive: true });
+    // SQLite include anche le pagine WAL, senza dipendere dal checkpoint
+    // e senza essere bloccato dalle transazioni di lettura di altri processi.
+    db.prepare('VACUUM INTO ?').run(temporary);
+    const snapshot = new DatabaseSync(temporary, { readOnly: true });
+    try {
+      const result = snapshot.prepare('PRAGMA integrity_check').all();
+      if (result.length !== 1 || result[0].integrity_check !== 'ok') throw new Error('Backup non integro');
+    } finally { snapshot.close(); }
+    renameSync(temporary, dest);
+    lastBackupAt = now;
+  } catch (error) {
+    try { unlinkSync(temporary); } catch {}
+    console.error('Backup database fallito:', error.message);
+    return null;
+  }
   try {
     const files = readdirSync(dir).filter((f) => f.endsWith('.db')).sort();
     for (let i = 0; i < files.length - KEEP_BACKUPS; i++) unlinkSync(join(dir, files[i]));
-  } catch {}
+  } catch (error) { console.error('Pulizia backup fallita:', error.message); }
   return dest;
 }
