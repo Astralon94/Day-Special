@@ -1,5 +1,6 @@
 import { DS } from '../../state/storage.js';
 import { App } from '../app.js';
+import { inlineEditor } from '../inlineEditor.js';
 
 export const title = 'Budget – Day Special';
 
@@ -236,7 +237,10 @@ export function mount(root) {
     sel.value = cur;
   }
 
+  let editor;
   function renderTable() {
+    // Il render remoto non deve rimuovere un campo in modifica e provocarne il blur.
+    if (editor?.deferRender()) return;
     const catF   = $('#filter-cat').value;
     const statoF = $('#filter-stato').value;
     let voci = budget.voci;
@@ -270,7 +274,7 @@ export function mount(root) {
     updateSummary();
   }
 
-  async function updateField(id, field, val) { await DS.command('budget.save', { id, values: { [field]: val } }); }
+  async function updateField(id, field, val, expected) { await DS.command('budget.save', { id, values: { [field]: val } }, expected); }
 
   function openForm(data) {
     editExpected = DS.revisions();
@@ -336,22 +340,15 @@ export function mount(root) {
   $('#btn-csv').addEventListener('click', exportCSV);
   $('#btn-print').addEventListener('click', () => window.print());
 
-  $('#tbody').addEventListener('blur', (e) => {
-    const t = e.target;
-    const act = t.dataset && t.dataset.act;
-    if (!act) return;
-    const id = t.dataset.id;
-    if (act === 'desc') updateField(id, 'descrizione', t.value);
-    else if (act === 'prev') updateField(id, 'preventivo', parseFloat(t.value) || 0);
-    else if (act === 'pag') updateField(id, 'pagato', parseFloat(t.value) || 0);
-    else if (act === 'note') updateField(id, 'note', t.value);
-  }, true);
-  $('#tbody').addEventListener('change', (e) => {
-    const t = e.target;
-    if (t.dataset && t.dataset.act === 'stato') {
-      updateField(t.dataset.id, 'stato', t.value);
-      t.className = 'stato-select stato-' + t.value;
-    }
+  editor = inlineEditor({
+    container: $('#tbody'), revisions: DS.revisions, render: renderTable,
+    save: async (target, expected) => {
+      const fields = { desc: 'descrizione', prev: 'preventivo', pag: 'pagato', note: 'note', stato: 'stato' };
+      const field = fields[target.dataset.act];
+      if (!field) return;
+      const value = ['prev', 'pag'].includes(target.dataset.act) ? Number(target.value) : target.value;
+      await updateField(target.dataset.id, field, value, expected);
+    },
   });
   $('#tbody').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-act]');
@@ -366,5 +363,5 @@ export function mount(root) {
     if (e.detail.remote && e.detail.key === 'ds_budget') { load(); renderTable(); }
   };
   window.addEventListener('ds:change', onChange);
-  return () => window.removeEventListener('ds:change', onChange);
+  return () => { editor.dispose(); window.removeEventListener('ds:change', onChange); };
 }

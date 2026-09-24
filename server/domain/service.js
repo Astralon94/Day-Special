@@ -1,7 +1,6 @@
 // Un solo ingresso per le modifiche: validazione, concorrenza, ricevuta e commit.
 import { createHash } from 'node:crypto';
 import { db, backupDb } from '../db.js';
-import { getAll } from '../documents.js';
 import { commands } from './commands.js';
 import { DOC_KEYS, normalize, object, id, fail, cateringCost } from './model.js';
 db.exec(`CREATE TABLE IF NOT EXISTS command_receipts (
@@ -19,19 +18,23 @@ function canonical(value) {
   return value;
 }
 function readState() {
-  const saved = getAll(),
-    documents = {},
-    values = {};
+  const saved = new Map(db.prepare('SELECT * FROM documents').all().map(row => [row.key, row]));
+  const documents = {}, values = {};
   for (const key of DOC_KEYS) {
-    const row = saved[key];
-    values[key] = normalize(key, row?.value);
-    documents[key] = {
-      value: values[key],
-      rev: row?.rev || 0,
-      updated_at: row?.updated_at || null,
-    };
+    const row = saved.get(key);
+    const entry = { value: null, rev: row?.rev || 0, updated_at: row?.updated_at || null };
+    try {
+      entry.value = normalize(key, row ? JSON.parse(row.value) : undefined);
+    } catch {
+      // Conserva il documento originale: solo le operazioni che lo usano sono bloccate.
+      entry.error = 'Dati della sezione non validi: verifica necessaria prima di modificarli.';
+    }
+    documents[key] = entry;
+    values[key] = entry.value;
   }
-  return { protocol: 2, documents, computed: { cateringCost: cateringCost(values) } };
+  const computed = { cateringCost: null };
+  if (values.ds_invitati && values.ds_prices) computed.cateringCost = cateringCost(values);
+  return { protocol: 2, documents, computed };
 }
 export function state() {
   db.exec('BEGIN');
@@ -69,6 +72,7 @@ export function execute(command) {
     } else {
       const before = readState();
       for (const key of definition.keys) {
+        if (before.documents[key].error) fail(before.documents[key].error, 422);
         if (!Number.isSafeInteger(command.expected[key]) || command.expected[key] < 0)
           fail('Revisione richiesta per ' + key, 428);
         if (command.expected[key] !== before.documents[key].rev)

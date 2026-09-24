@@ -158,3 +158,29 @@ test('documenti storici conservati, normalizzazione non distruttiva', () => {
   assert.equal(values('ds_invitati').extra, 'conservato');
   assert.equal(state().documents.ds_invitati.rev, 5);
 });
+
+test('campi storici mancanti: letture compatibili senza riscrivere gli originali', () => {
+  const legacy = JSON.stringify({ sposo: {}, sposa: { groups: [] }, comuni: { groups: [] }, extra: 'originale' });
+  db.prepare('INSERT INTO documents VALUES(?,?,?,?)').run('ds_invitati', legacy, 'prima', 4);
+  assert.deepEqual(values('ds_invitati').sposo.groups, []);
+  assert.equal(values('ds_invitati').extra, 'originale');
+  command('budget.total', { value: 100 });
+  assert.equal(values('ds_budget').totale, 100);
+  assert.equal(db.prepare("SELECT value FROM documents WHERE key='ds_invitati'").get().value, legacy);
+  command('group.create', { section: 'sposo', values: { name: 'Nuovo' } });
+  assert.equal(values('ds_invitati').sposo.groups.length, 1);
+});
+test('documento non interpretabile isolato: sezioni sane operative, dati originali intatti', () => {
+  for (const raw of ['{"sposo":{"groups":"errato"}}', '{json interrotto']) {
+    db.prepare('INSERT OR REPLACE INTO documents VALUES(?,?,?,?)').run('ds_invitati', raw, 'prima', 4);
+    const s = state();
+    assert.ok(s.documents.ds_invitati.error);
+    assert.equal(s.documents.ds_invitati.value, null);
+    assert.equal(s.computed.cateringCost, null);
+    command('budget.total', { value: 200 });
+    assert.equal(values('ds_budget').totale, 200);
+    assert.throws(() => command('group.create', { section: 'sposo', values: { name: 'No' } }), e => e.status === 422);
+    assert.throws(() => command('budget.catering'), e => e.status === 422);
+    assert.equal(db.prepare("SELECT value FROM documents WHERE key='ds_invitati'").get().value, raw);
+  }
+});

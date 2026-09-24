@@ -149,3 +149,14 @@ test('GET precedente al comando non fa regredire la conferma', async () => {
   await saving;
   assert.equal(a.DS.get(key).totale, 20);
 });
+
+test('snapshot con errore isolato resta leggibile e segnala la sezione indisponibile', async () => {
+  const a = client();
+  const p = a.DS.refresh();
+  const s = snapshot(); s.documents[key] = { value: null, rev: 2, error: 'Dati da verificare' };
+  await a.reply(0, s); await p;
+  assert.equal(a.DS.ready, true);
+  assert.equal(a.DS.get(key), null);
+  assert.equal(a.DS.documentError(key), 'Dati da verificare');
+  assert.equal(a.DS.status, 'synced');
+});

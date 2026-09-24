@@ -33,7 +33,9 @@ scrive i soli aggregati cambiati e conserva una ricevuta. Il risultato contiene
 - Il riuso dello stesso identificativo con contenuto differente è rifiutato.
 - Revisioni obsolete: 409, nessuna modifica. Il client aggiorna i dati e
   avvisa; i moduli mantengono la revisione di apertura e vanno riaperti per
-  lavorare sulla nuova versione. Nessun merge o invio forzato.
+  lavorare sulla nuova versione. Nel Budget anche i campi inline conservano
+  la revisione di inizio modifica: il render remoto attende la fine della
+  modifica e i campi invariati non generano comandi. Nessun merge o invio forzato.
 - Campi non ammessi, date, numeri o stati invalidi: 422. Revisione mancante: 428.
 - L'endpoint storico `PUT /api/documents/:key` risponde 410: nessuna pagina
   precedente può aggirare i controlli inviando interi documenti.
@@ -100,7 +102,10 @@ Una cache non scrivibile non impedisce i salvataggi sul database.
    modifiche non inviate. Non esiste importazione automatica o distruttiva.
 4. Le pagine precedenti vanno ricaricate. Eventuali dati legacy malformati o
    assegnazioni già incoerenti richiedono verifica: il backend non li cancella
-   silenziosamente per far passare i controlli.
+   silenziosamente per far passare i controlli. I campi mancanti compatibili
+   ricevono default in lettura; i documenti non interpretabili sono segnalati
+   con `error` e `value: null`. Solo le operazioni che li usano sono bloccate,
+   mentre le altre sezioni rimangono operative.
 
 ## Persistenza e aggiornamenti
 

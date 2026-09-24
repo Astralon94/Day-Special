@@ -169,6 +169,9 @@ export function reorder(order, requested) {
 export function normalize(key, source) {
   const d = clone(source ?? defaults[key]);
   object(d);
+  for (const [field, value] of Object.entries(defaults[key]))
+    if (d[field] === undefined && !['eventOrder', 'tableOrder'].includes(field)) d[field] = clone(value);
+  const array = (value) => { if (!Array.isArray(value)) fail('Elenco non valido'); return value; };
   // Migrazioni di rappresentazione non distruttive: campi storici mantenuti.
   if (key === 'ds_invitati') {
     d.sposi ??= clone(defaults.ds_invitati.sposi);
@@ -176,10 +179,16 @@ export function normalize(key, source) {
     d.sposi.type = 'sposi';
     for (const sec of sections) {
       d[sec] ??= { groups: [], groupOrder: [] };
+      object(d[sec]);
+      d[sec].groups ??= [];
+      array(d[sec].groups);
       d[sec].groupOrder ??= d[sec].groups.map((g) => g.id);
+      array(d[sec].groupOrder);
     }
     for (const g of groups({ ds_invitati: d })) {
+      object(g);
       g.guests ??= [];
+      array(g.guests);
       if (g.id !== 'sposi') {
         g.type ??= 'generico';
         g.capofamiglia ??= null;
@@ -197,7 +206,9 @@ export function normalize(key, source) {
       }
     }
   }
-  if (key === 'ds_prices') d.adultoMenu ??= clone(defaults.ds_prices.adultoMenu);
+  if (key === 'ds_prices') { d.adultoMenu ??= clone(defaults.ds_prices.adultoMenu); object(d.adultoMenu); }
+  const listField = { ds_budget: 'voci', ds_fornitori: 'fornitori', ds_programma: 'eventi', ds_tavoli: 'tavoli', ds_checklist: 'items' }[key];
+  if (listField) array(d[listField]).forEach(object);
   if (key === 'ds_programma') d.eventOrder ??= d.eventi.map((e) => e.id);
   if (key === 'ds_tavoli') {
     d.layout = { ...defaults.ds_tavoli.layout, ...d.layout };

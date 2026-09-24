@@ -19,8 +19,11 @@ export const Sync = (() => {
       notice.id = 'server-notice';
       document.body.prepend(notice);
     }
-    notice.textContent = labels[DS.status];
-    notice.hidden = DS.status === 'synced';
+    const damaged = DS.KEYS.some(key => DS.documentError(key));
+    notice.textContent = DS.status === 'synced' && damaged
+      ? 'Alcune sezioni richiedono una verifica dei dati. I dati originali sono conservati; le altre sezioni restano disponibili.'
+      : labels[DS.status];
+    notice.hidden = DS.status === 'synced' && !damaged;
     document.documentElement.dataset.readonly = String(!DS.writable);
   }
   function allowed(target) {
