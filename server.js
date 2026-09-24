@@ -5,7 +5,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAll, put, counts } from './server/documents.js';
+import { getAll, get, put, counts } from './server/documents.js';
 import { backupDb } from './server/db.js';
 import * as updater from './server/updater.js';
 import { DOC_KEYS } from './src/shared/docKeys.js';
@@ -104,6 +104,12 @@ async function api(req, res, url) {
     return json(res, 200, getAll());
   }
 
+  if (resource === 'documents' && id && method === 'GET') {
+    if (!DOC_KEYS.includes(id)) return json(res, 400, { error: 'Chiave non valida' });
+    const current = get(id);
+    return json(res, current ? 200 : 404, current || { error: 'Documento assente' });
+  }
+
   // Upsert di un singolo documento + broadcast SSE ai client connessi.
   if (resource === 'documents' && id && method === 'PUT') {
     if (!DOC_KEYS.includes(id)) return json(res, 400, { error: 'Chiave non valida: ' + id });
@@ -117,10 +123,10 @@ async function api(req, res, url) {
     }
     const origin = String(req.headers['x-ds-client'] || '').slice(0, 64);
     try {
-      const { updated_at, rev } = put(id, b.value);
+      const { updated_at, rev } = put(id, b.value, b.expected_rev);
       broadcast(id, b.value, updated_at, rev, origin);
       return json(res, 200, { updated_at, rev });
-    } catch (e) { return json(res, 400, { error: String(e.message || e) }); }
+    } catch (e) { return json(res, e.status || 500, { error: String(e.message || e), ...(e.status === 409 ? { current: e.current } : {}) }); }
   }
 
   // Stream SSE: un evento 'change' per ogni PUT riuscito di un altro client/dispositivo.
@@ -202,7 +208,9 @@ async function serveStatic(req, res, url) {
 }
 
 createServer(async (req, res) => {
-  const url = new URL(req.url, `http://localhost:${PORT}`);
+  let url;
+  try { url = new URL(req.url, `http://localhost:${PORT}`); }
+  catch { return json(res, 400, { error: 'URL non valido' }); }
   try {
     if (url.pathname.startsWith('/api/')) return await api(req, res, url);
     return await serveStatic(req, res, url);

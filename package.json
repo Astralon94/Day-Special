@@ -1,14 +1,15 @@
 {
   "name": "day-special-server",
-  "version": "0.3.9",
+  "version": "0.3.10",
   "private": true,
   "type": "module",
   "description": "Day Special — planner di matrimonio per due, offline-first: SPA singlefile + server Node (http + node:sqlite) senza dipendenze runtime, sync multi-dispositivo via SSE.",
   "scripts": {
-    "start": "node server.js",
+    "start": "node --experimental-sqlite server.js",
     "build": "vite build && cp dist/index.html public/index.html",
     "dev": "vite",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "test": "node --experimental-sqlite --test tests/*.test.mjs"
   },
   "devDependencies": {
     "vite": "^7.3.6",
