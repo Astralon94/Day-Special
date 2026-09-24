@@ -160,3 +160,17 @@ test('snapshot con errore isolato resta leggibile e segnala la sezione indisponi
   assert.equal(a.DS.documentError(key), 'Dati da verificare');
   assert.equal(a.DS.status, 'synced');
 });
+
+test('lettura finale lenta: nessun secondo inserimento prima del ritorno alla vista', async () => {
+  const a = client(); await a.connect();
+  let completed = false;
+  const first = a.DS.command('guest.create', { values: { name: 'Prova' } }).then(() => { completed = true; });
+  await a.reply(1, { result: { id: 'guest-1' }, state: snapshot(20, 2) });
+  assert.equal(completed, false);
+  assert.equal(a.DS.writable, false);
+  assert.equal(a.DS.status, 'saving');
+  assert.equal(await a.DS.command('guest.create', { values: { name: 'Prova' } }), null);
+  assert.equal(a.requests.filter(r => r.options.method === 'POST').length, 1);
+  await a.reply(2, snapshot(20, 2)); await first;
+  assert.equal(completed, true); assert.equal(a.DS.writable, true);
+});

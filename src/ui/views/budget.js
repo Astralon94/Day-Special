@@ -168,6 +168,7 @@ export function mount(root) {
 
 
   function load() {
+    if (editor?.deferRender()) return;
     const d = DS.get('ds_budget');
     if (d) budget = d;
     if (!Array.isArray(budget.voci)) budget.voci = [];
@@ -330,7 +331,7 @@ export function mount(root) {
   }
 
   // ── Eventi (delega su tbody per gli input generati dinamicamente) ──
-  $('#input-budget-totale').addEventListener('change', saveBudgetTotale);
+  $('#input-budget-totale').dataset.act = 'budget-total';
   $('#btn-importa-catering').addEventListener('click', importaCatering);
   $('#btn-open-form').addEventListener('click', () => openForm());
   $('#filter-cat').addEventListener('change', renderTable);
@@ -341,8 +342,9 @@ export function mount(root) {
   $('#btn-print').addEventListener('click', () => window.print());
 
   editor = inlineEditor({
-    container: $('#tbody'), revisions: DS.revisions, render: renderTable,
+    container: root, revisions: DS.revisions, render: () => { load(); renderTable(); },
     save: async (target, expected) => {
+      if (target.dataset.act === 'budget-total') return DS.command('budget.total', { value: Number(target.value) }, expected);
       const fields = { desc: 'descrizione', prev: 'preventivo', pag: 'pagato', note: 'note', stato: 'stato' };
       const field = fields[target.dataset.act];
       if (!field) return;

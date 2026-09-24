@@ -33,7 +33,7 @@ scrive i soli aggregati cambiati e conserva una ricevuta. Il risultato contiene
 - Il riuso dello stesso identificativo con contenuto differente è rifiutato.
 - Revisioni obsolete: 409, nessuna modifica. Il client aggiorna i dati e
   avvisa; i moduli mantengono la revisione di apertura e vanno riaperti per
-  lavorare sulla nuova versione. Nel Budget anche i campi inline conservano
+  lavorare sulla nuova versione. I campi diretti di Budget, Invitati, Programma e capienza tavoli conservano
   la revisione di inizio modifica: il render remoto attende la fine della
   modifica e i campi invariati non generano comandi. Nessun merge o invio forzato.
 - Campi non ammessi, date, numeri o stati invalidi: 422. Revisione mancante: 428.
@@ -74,7 +74,7 @@ filtri, ordinamenti di visualizzazione e riepiloghi di sola lettura restano
 nelle viste; nessuno di essi autorizza una scrittura.
 
 La UI attende il commit prima di mostrare il risultato come salvato. Durante
-una richiesta e senza connessione, nuove modifiche sono bloccate. Le fetch
+una richiesta, incluse le letture finali prima del ritorno alla vista, e senza connessione, nuove modifiche sono bloccate. Le fetch
 hanno timeout; se l'esito di un comando è incerto, la pagina conserva in memoria
 la richiesta già emessa e la ripete con lo stesso ID finché riceve conferma.
 Non è una coda per lavorare offline. La chiusura della pagina in questo stato
