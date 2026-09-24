@@ -127,8 +127,9 @@ export function mount(root) {
 
   let data = { fornitori: [] };
   let editId = null;
+  let editExpected = null;
 
-  function save() { DS.set('ds_fornitori', data); }
+
   function load() {
     const d = DS.get('ds_fornitori');
     if (d) data = d;
@@ -204,6 +205,7 @@ export function mount(root) {
   }
 
   function openForm(fdata) {
+    editExpected = DS.revisions();
     editId = fdata ? fdata.id : null;
     $('#form-title').textContent = editId ? 'Modifica fornitore' : 'Nuovo fornitore';
     $('#f-nome').value       = fdata?.nome      || '';
@@ -221,12 +223,12 @@ export function mount(root) {
   }
   function closeForm() { $('#add-form').classList.remove('open'); editId = null; }
 
-  function saveFornitore() {
+  async function saveFornitore() {
     const nome = $('#f-nome').value.trim();
     if (!nome) { toast('Inserisci il nome del fornitore'); return; }
     const wasEdit = !!editId;
     const obj = {
-      id:         editId || uid(),
+      id:         editId,
       nome,
       azienda:    $('#f-azienda').value.trim(),
       categoria:  $('#f-categoria').value,
@@ -238,20 +240,15 @@ export function mount(root) {
       stato:      $('#f-stato').value,
       note:       $('#f-note').value.trim()
     };
-    if (wasEdit) {
-      const i = data.fornitori.findIndex(f => f.id === editId);
-      if (i >= 0) data.fornitori[i] = obj;
-    } else {
-      data.fornitori.push(obj);
-    }
-    save(); closeForm(); renderCards(); toast(wasEdit ? 'Fornitore aggiornato' : 'Fornitore aggiunto');
+    const { id, ...values } = obj;
+    if (!await DS.command('supplier.save', { id: editId, values }, editExpected)) return;
+    closeForm(); toast(wasEdit ? 'Modifica salvata' : 'Elemento aggiunto');
   }
 
   function editFornitore(id) { openForm(data.fornitori.find(f => f.id === id)); }
-  function deleteFornitore(id) {
-    if (!confirm('Eliminare questo fornitore?')) return;
-    data.fornitori = data.fornitori.filter(f => f.id !== id);
-    save(); renderCards(); toast('Fornitore eliminato');
+  async function deleteFornitore(id) {
+    if (!confirm('Eliminare questo elemento?')) return;
+    if (await DS.command('supplier.delete', { id })) toast('Elemento eliminato');
   }
 
   function exportCSV() {

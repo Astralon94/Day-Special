@@ -5,9 +5,10 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, normalize, dirname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { getAll, get, put, counts } from './server/documents.js';
-import { backupDb } from './server/db.js';
+import { getAll, get, counts } from './server/documents.js';
+import { backupDb, DB_PATH } from './server/db.js';
 import * as updater from './server/updater.js';
+import { state, execute } from './server/domain/service.js';
 import { DOC_KEYS } from './src/shared/docKeys.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -16,6 +17,7 @@ const PORT = process.env.PORT || 4335;
 
 // ---- Aggiornamento software (metodo Zen-Store: manifest + pacchetto su GitHub Releases) ----
 const EXIT_RESTART = 42;
+let installing = false;
 const UPDATE_URL = process.env.DS_UPDATE_URL !== undefined
   ? process.env.DS_UPDATE_URL
   : 'https://github.com/Astralon94/Day-Special/releases/latest/download/manifest.json';
@@ -76,12 +78,6 @@ const readBody = (req) => new Promise((resolve) => {
 
 // ---- Realtime (Server-Sent Events): sostituto locale di Supabase Realtime ----
 const sseClients = new Set();
-// `origin` è l'id istanza del client che ha fatto la PUT (header X-DS-Client):
-// l'evento arriva anche a lui, e così può riconoscere l'eco e ignorarlo.
-function broadcast(key, value, updated_at, rev, origin) {
-  const payload = `event: change\ndata: ${JSON.stringify({ key, value, updated_at, rev, origin })}\n\n`;
-  for (const res of sseClients) { try { res.write(payload); } catch {} }
-}
 // Heartbeat: un commento SSE ogni 25 s tiene viva la connessione attraverso
 // proxy e tunnel che chiudono gli stream inattivi (Cloudflare dopo ~100 s).
 const SSE_HEARTBEAT_MS = 25000;
@@ -99,7 +95,7 @@ async function api(req, res, url) {
     return json(res, 200, { ok: true, app: 'day-special-server', ...counts() });
   }
 
-  // Stato completo: boot iniziale del client (equivalente al fetch iniziale di Sync.fullSync()).
+  // Letture storiche mantenute per compatibilità e diagnostica.
   if (resource === 'data' && method === 'GET') {
     return json(res, 200, getAll());
   }
@@ -110,26 +106,27 @@ async function api(req, res, url) {
     return json(res, current ? 200 : 404, current || { error: 'Documento assente' });
   }
 
-  // Upsert di un singolo documento + broadcast SSE ai client connessi.
-  if (resource === 'documents' && id && method === 'PUT') {
-    if (!DOC_KEYS.includes(id)) return json(res, 400, { error: 'Chiave non valida: ' + id });
-    const b = await readBody(req);
-    if (b === BODY_TOO_LARGE) {
-      res.setHeader('Connection', 'close');
-      return json(res, 413, { error: `Documento troppo grande (massimo ${MAX_BODY_BYTES / 1024 / 1024} MB)` });
-    }
-    if (b == null || typeof b.value !== 'object' || b.value === null) {
-      return json(res, 400, { error: 'Body non valido: atteso { value }' });
-    }
-    const origin = String(req.headers['x-ds-client'] || '').slice(0, 64);
+  // Le vecchie pagine non possono più sostituire interi documenti.
+  if (resource === 'documents' && method === 'PUT') {
+    return json(res, 410, { error: 'Aggiorna la pagina: i salvataggi sono gestiti dal nuovo backend.' });
+  }
+  if (resource === 'state' && method === 'GET') return json(res, 200, state());
+  if (resource === 'commands' && method === 'POST') {
+    if (installing) return json(res, 503, { error: 'Aggiornamento in corso, riprova fra pochi secondi' });
+    const body = await readBody(req);
+    if (installing) return json(res, 503, { error: 'Aggiornamento in corso, riprova fra pochi secondi' });
+    if (body === BODY_TOO_LARGE) return json(res, 413, { error: 'Richiesta troppo grande' });
     try {
-      const { updated_at, rev } = put(id, b.value, b.expected_rev);
-      broadcast(id, b.value, updated_at, rev, origin);
-      return json(res, 200, { updated_at, rev });
-    } catch (e) { return json(res, e.status || 500, { error: String(e.message || e), ...(e.status === 409 ? { current: e.current } : {}) }); }
+      const result = execute(body);
+      if (!result.replayed && result.changed.length) {
+        const payload = `event: invalidate\ndata: ${JSON.stringify({ keys: result.changed })}\n\n`;
+        for (const client of sseClients) { if (!client.write(payload)) client.destroy(); }
+      }
+      return json(res, 200, result);
+    } catch (error) { return json(res, error.status || 500, { error: error.status ? error.message : 'Errore durante il salvataggio' }); }
   }
 
-  // Stream SSE: un evento 'change' per ogni PUT riuscito di un altro client/dispositivo.
+  // Stream SSE: invalidazione dopo il commit di un comando.
   if (resource === 'stream' && method === 'GET') {
     res.writeHead(200, {
       'Content-Type': 'text/event-stream; charset=utf-8',
@@ -138,6 +135,7 @@ async function api(req, res, url) {
     });
     res.write(': connesso\n\n');
     sseClients.add(res);
+    res.on('error', () => sseClients.delete(res));
     req.on('close', () => sseClients.delete(res));
     return;
   }
@@ -154,17 +152,20 @@ async function api(req, res, url) {
       } catch (e) { return json(res, 502, { error: 'Controllo fallito: ' + e.message }); }
     }
     if (method === 'POST' && id === 'install') {
+      if (installing) return json(res, 409, { error: 'Installazione già in corso' });
       if (!UPDATE_URL) return json(res, 400, { error: 'Aggiornamenti disattivati (DS_UPDATE_URL vuota)' });
+      installing = true;
       try {
         const chk = await updater.checkUpdate(UPDATE_URL, __dirname);
-        if (!chk.disponibile) return json(res, 409, { error: 'Nessun aggiornamento disponibile' });
-        if (!chk.download_url) return json(res, 400, { error: 'Il manifest non indica il pacchetto (url)' });
+        if (!chk.disponibile) { installing = false; return json(res, 409, { error: 'Nessun aggiornamento disponibile' }); }
+        if (!chk.download_url) { installing = false; return json(res, 400, { error: 'Il manifest non indica il pacchetto (url)' }); }
         const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const backup = backupDb({ force: true });
+        if (DB_PATH !== ':memory:' && !backup) throw new Error('Backup verificato non disponibile');
         const rep = await updater.installaAggiornamento(chk.download_url, { appDir: __dirname, dataDir: join(__dirname, 'data'), stamp });
-        try { backupDb({ force: true }); } catch {}
         setTimeout(() => process.exit(EXIT_RESTART), 800);
         return json(res, 200, { ok: true, ...rep, riavvio: true });
-      } catch (e) { return json(res, 500, { error: 'Installazione fallita: ' + e.message }); }
+      } catch (e) { installing = false; return json(res, 500, { error: 'Installazione fallita: ' + e.message }); }
     }
   }
 
@@ -181,7 +182,7 @@ function statusPage() {
   table{border-collapse:collapse;margin-top:1rem}td{border-bottom:1px solid #e5e7eb;padding:.3rem .8rem}</style>
   <h1>🟢 Day-Special — server dati attivo</h1>
   <p>DB documentale (node:sqlite) — <b>${c.documenti} documenti</b>. Frontend non ancora buildato (public/index.html assente).</p>
-  <p>API: <code>GET /api/data</code> · <code>PUT /api/documents/:key</code> · <code>GET /api/stream</code> · <code>GET /api/health</code></p>
+  <p>API: <code>GET /api/state</code> · <code>POST /api/commands</code> · <code>GET /api/stream</code> · <code>GET /api/health</code></p>
   <table><tr><th style="text-align:left">Chiave</th><th>Dimensione</th></tr>${rows}</table>`;
 }
 

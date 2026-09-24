@@ -345,3 +345,6 @@ td { padding: 10px 14px; font-size: .9rem; vertical-align: middle; }
   .summary-cards { grid-template-columns: 1fr 1fr; }
   .summary-cards .stat-card:nth-child(even) { border-right: none; }
 }
+
+#server-notice { padding: 10px 20px; background: var(--warning-soft, #fff3cd); color: var(--text); text-align: center; position: sticky; top: 0; z-index: 1000; }
+html[data-readonly="true"] #app input, html[data-readonly="true"] #app textarea, html[data-readonly="true"] #app select { opacity: .65; }

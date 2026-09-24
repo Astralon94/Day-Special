@@ -2,18 +2,19 @@
 
 Web-app per organizzare un matrimonio in due: invitati, budget, fornitori,
 programma della giornata, tavoli e checklist, sempre sincronizzati tra i
-dispositivi e utilizzabili anche offline.
+dispositivi, con SQLite autorevole e consultazione offline dei dati già caricati.
 
 ## Caratteristiche
 
 - **Sei sezioni operative**: invitati (gruppi, conferme, intolleranze), budget
   con preventivi e pagamenti, fornitori, programma della giornata, sala grafica
   con tavoli trascinabili e assegnazione degli invitati, checklist dei preparativi.
-- **Offline-first**: i dati vivono nel browser (localStorage) e la UI non
-  aspetta mai la rete; il server è un mirror sincronizzato in background.
-- **Sync in tempo reale**: le modifiche si propagano agli altri dispositivi via
-  Server-Sent Events; le modifiche concorrenti si fondono automaticamente con
-  un merge a 3 vie, senza popup di conflitto.
+- **Salvataggi sul backend**: SQLite è la fonte autorevole. Il browser invia
+  operazioni validate; il salvataggio è confermato soltanto dopo il commit.
+- **Concorrenza e recupero**: transazioni, revisioni e ricevute idempotenti
+  impediscono sovrascritture obsolete e doppie operazioni dopo risposte perse.
+- **Aggiornamenti in tempo reale**: SSE invalida la cache di lettura. Senza
+  connessione si possono consultare i dati già caricati; le modifiche sono bloccate.
 - **Zero dipendenze runtime**: il server è Node puro (`node:http` +
   `node:sqlite`), il frontend è un singolo `index.html` autosufficiente.
   L'unica dipendenza di sviluppo è Vite, usata solo per il build.
@@ -75,46 +76,32 @@ server resta spento dopo un aggiornamento.
 |----------|-------|
 | `server.js` | Server HTTP: statico da `public/` + API `/api/*` |
 | `server/db.js` | Connessione `node:sqlite` (WAL), DDL, backup automatici |
-| `server/documents.js` | Accesso alla tabella `documents` (key-value) |
+| `server/documents.js` | Lettura dei documenti storici |
+| `server/domain/` | Contratti, regole, transazioni e ricevute dei comandi |
 | `server/updater.js` | Aggiornamento software via manifest + pacchetto su GitHub Releases |
 | `src/` | Sorgenti della SPA (router a hash, una vista per sezione) |
 | `src/shared/docKeys.js` | Elenco delle chiavi documento, condiviso tra client e server |
-| `src/state/` | Layer dati: localStorage, merge a 3 vie, sync via fetch + SSE |
+| `src/state/` | Cache di lettura, comandi HTTP e invalidazione SSE |
 | `public/` | Asset statici + `index.html` buildato (l'app runnable) |
 
-Il modello dati è una singola tabella key-value documentale: ogni sezione
-dell'app è un documento JSON opaco per il server, con una revisione (`rev`)
-incrementata dal server a ogni scrittura e usata dal client per il merge.
-Le scritture richiedono la revisione attesa: controllo e aggiornamento avvengono
-nella stessa transazione SQLite. In caso di concorrenza il client riconcilia
-automaticamente il documento e riprova. Per ogni documento invia una sola
-scrittura alla volta, preceduta da una lettura aggiornata anche nei retry.
-Gli eventi con revisioni superate vengono ignorati; l'apertura dello stream,
-compresa la prima, recupera lo stato completo.
-
-Dopo questo aggiornamento, le pagine già aperte con il vecchio client devono
-essere ricaricate: le loro scritture senza revisione vengono rifiutate con 428,
-preservando le modifiche presenti nel browser.
-
-I backup usano `VACUUM INTO` per includere le scritture nel WAL anche con lettori
-attivi. Lo snapshot viene verificato con `integrity_check` e pubblicato solo
-se integro. Un errore di backup viene registrato senza invalidare una scrittura
-già confermata; i backup restano soggetti alla ritenzione di 20 copie.
+Il backend mantiene i documenti SQLite esistenti e aggiunge ricevute dei comandi.
+Il browser non può più sostituire interi documenti né risolvere conflitti da solo.
+I vecchi dati locali sono conservati ed esportabili da Impostazioni: non vengono
+importati automaticamente. Dopo l'aggiornamento ricaricare le pagine già aperte.
 
 ### API
 
 - `GET /api/health` — stato e conteggi
-- `GET /api/data` — tutti i documenti (bootstrap del client)
-- `GET /api/documents/:key` — documento e revisione correnti, oppure 404
-- `PUT /api/documents/:key` — scrittura condizionata (body `{ value, expected_rev }`, massimo
-  2 MB; l'header opzionale `X-DS-Client` identifica l'istanza che scrive)
-  La revisione attesa è 0 per una nuova chiave. Successo: `{ updated_at, rev }`;
-  conflitto: HTTP 409 con `{ error, current }`, senza scrittura né evento SSE.
-  Revisione assente o non valida: HTTP 428.
-- `GET /api/stream` — Server-Sent Events: un evento `change` per ogni PUT riuscita,
-  inviato a tutti i client compreso chi ha scritto (`origin` = `X-DS-Client`,
-  così il mittente riconosce e ignora l'eco); heartbeat ogni 25 s
+- `GET /api/state` — snapshot consistente, revisioni e valori calcolati
+- `POST /api/commands` — `{ id, operation, input, expected }`: operazione di dominio
+  atomica e idempotente; risposta con risultato e snapshot confermato
+- `GET /api/stream` — notifiche SSE `invalidate`, senza copie dei documenti
+- `GET /api/data`, `GET /api/documents/:key` — letture storiche compatibili
+- `PUT /api/documents/:key` — disabilitato (410)
 - `GET/POST /api/updates*` — controllo e installazione aggiornamenti
+
+Contratti, comportamento offline, compatibilità e procedura di passaggio sono
+in [docs/backend.md](docs/backend.md).
 
 ## Sviluppo
 
@@ -127,7 +114,8 @@ npm run build      # build singlefile → public/index.html
 Per provare la build reale servita dal server Node:
 
 ```sh
-npm run build && PORT=4435 node server.js
+npm run build
+DS_DB=:memory: DS_UPDATE_URL= PORT=4435 node --experimental-sqlite server.js
 ```
 
 Smoke test del server con database in memoria (non tocca `data/` e non
@@ -147,8 +135,8 @@ Verifiche di regressione con il test runner integrato di Node:
 npm test
 ```
 
-I test coprono retry, conflitti e richieste sovrapposte con rete simulata,
-recupero SSE, API HTTP e backup con lettori SQLite attivi. Usano esclusivamente
+I test coprono comandi di dominio, rollback, concorrenza, ricevute idempotenti,
+recupero rete, client offline, SSE, compatibilità e backup con lettori SQLite attivi. Usano esclusivamente
 database in memoria e copie temporanee dell'applicazione.
 
 ## Licenza

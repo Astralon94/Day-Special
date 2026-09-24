@@ -1,5 +1,5 @@
 // ============ Documenti key-value: get/put/counts ============
-import { db, backupDb } from './db.js';
+import { db } from './db.js';
 import { DOC_KEYS } from '../src/shared/docKeys.js';
 
 // Tutti i documenti presenti (una chiave assente = "mai salvata", comportamento
@@ -18,36 +18,6 @@ export function get(key) {
   const row = db.prepare('SELECT value, updated_at, rev FROM documents WHERE key = ?').get(key);
   if (!row) return null;
   return { value: JSON.parse(row.value), updated_at: row.updated_at, rev: row.rev };
-}
-
-// Controllo revisione e scrittura nella stessa transazione: nessun client
-// può sostituire uno snapshot che nel frattempo è stato aggiornato.
-export function put(key, value, expectedRev) {
-  if (!DOC_KEYS.includes(key)) throw new Error('Chiave non valida: ' + key);
-  if (value === null || typeof value !== 'object') throw new Error('Valore non valido per ' + key);
-  if (!Number.isSafeInteger(expectedRev) || expectedRev < 0) {
-    throw Object.assign(new Error('Revisione attesa obbligatoria: aggiorna la pagina'), { status: 428 });
-  }
-  db.exec('BEGIN IMMEDIATE');
-  let row;
-  try {
-    const current = get(key);
-    if ((current?.rev || 0) !== expectedRev) {
-      throw Object.assign(new Error('Documento modificato: riconciliazione necessaria'), { status: 409, current });
-    }
-    row = db.prepare(`
-      INSERT INTO documents (key, value, updated_at, rev) VALUES (?, ?, ?, 1)
-      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at, rev = documents.rev + 1
-      RETURNING updated_at, rev
-    `).get(key, JSON.stringify(value), new Date().toISOString());
-    db.exec('COMMIT');
-  } catch (error) {
-    db.exec('ROLLBACK');
-    throw error;
-  }
-  // Il backup non deve trasformare una scrittura confermata in un errore HTTP.
-  backupDb();
-  return row;
 }
 
 export function counts() {

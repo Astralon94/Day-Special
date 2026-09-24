@@ -334,12 +334,6 @@ export function mount(root) {
 
   function emptySposi() { return { id: 'sposi', name: 'Sposi', type: 'sposi', guests: [] }; }
 
-  function migrateDiet(gu) {
-    if (gu.menu === undefined) gu.menu = '';
-    if (gu.celiaco === undefined) gu.celiaco = false;
-    if (gu.lattosio === undefined) gu.lattosio = false;
-    if (gu.menu === 'celiaco') { gu.celiaco = true; gu.menu = ''; }
-  }
 
   let data = {
     sposi:  emptySposi(),
@@ -352,37 +346,8 @@ export function mount(root) {
   let addOpenGid = null;
   let collapsedGroups = new Set();
 
-  function save() {
-    DS.set('ds_invitati', data);
-    DS.set('ds_prices', prices);
-  }
-  function load() {
-    const d = DS.get('ds_invitati');
-    const p = DS.get('ds_prices');
-    if (d) data   = d;
-    if (p) prices = p;
 
-    if (!data.sposi || data.sposi.type !== 'sposi') data.sposi = emptySposi();
-    data.sposi.id = 'sposi'; data.sposi.type = 'sposi'; data.sposi.name = 'Sposi';
-    if (!Array.isArray(data.sposi.guests)) data.sposi.guests = [];
-    data.sposi.guests.forEach(migrateDiet);
-
-    SECTIONS.forEach(s => {
-      if (!data[s]) data[s] = { groups: [], groupOrder: [] };
-      if (!Array.isArray(data[s].groups)) data[s].groups = [];
-      if (!data[s].groupOrder) data[s].groupOrder = data[s].groups.map(g => g.id);
-      if (!Array.isArray(data[s].groupOrder)) data[s].groupOrder = data[s].groups.map(g => g.id);
-      data[s].groups.forEach(g => {
-        if (!g.type) g.type = 'generico';
-        if (g.capofamiglia === undefined) g.capofamiglia = null;
-        if (!Array.isArray(g.guests)) g.guests = [];
-        g.guests.forEach(gu => {
-          if (gu.parentela === undefined) gu.parentela = '';
-          migrateDiet(gu);
-        });
-      });
-    });
-  }
+  function load() { data = DS.get('ds_invitati'); prices = DS.get('ds_prices'); }
 
   function findGroup(sec, gid) {
     if (sec === 'sposi') return data.sposi;
@@ -418,7 +383,7 @@ export function mount(root) {
     const m = prices.adultoMenu || {};
     return (g.menu && m[g.menu]) ? m[g.menu] : (prices.adulto || 0);
   }
-  function saveAndRefresh() { readPrices(); save(); updateSummary(); }
+  async function saveAndRefresh() { readPrices(); await DS.command('prices.set', { values: prices }); }
 
   function switchTab(tab, btn) {
     activeTab = tab;
@@ -466,61 +431,24 @@ export function mount(root) {
   function closeGroupForm(sec) {
     $('#group-form-' + sec).classList.remove('open');
   }
-  function addGroup(sec) {
-    const inp  = $('#input-group-nome-' + sec);
-    const tipo = $('#input-group-tipo-' + sec).value;
-    const name = (inp ? inp.value.trim() : '') ||
-                 ((tipo === 'famiglia' ? 'Famiglia ' : 'Gruppo ') + (data[sec].groups.length + 1));
-    const g = { id: uid(), name, type: tipo, capofamiglia: null, guests: [] };
-    data[sec].groups.push(g);
-    data[sec].groupOrder.push(g.id);
-    save();
-    closeGroupForm(sec);
-    renderSection(sec);
-    refreshGroupSelect(sec);
-    toast('Gruppo "' + g.name + '" creato');
+  async function addGroup(sec) {
+    const input = $('#input-group-nome-' + sec);
+    const name = input.value.trim();
+    const values = { type: $('#input-group-tipo-' + sec).value };
+    if (name) values.name = name;
+    if (await DS.command('group.create', { section: sec, values })) { closeGroupForm(sec); toast('Gruppo creato'); }
   }
 
-  function moveGroup(sec, gid, dir) {
-    const order = data[sec].groupOrder;
-    const i = order.indexOf(gid);
-    if (i < 0) return;
-    const j = i + dir;
-    if (j < 0 || j >= order.length) return;
-    [order[i], order[j]] = [order[j], order[i]];
-    save();
-    renderSection(sec);
-  }
+  async function moveGroup(sec, gid, dir) { await DS.command('group.move', { section: sec, id: gid, direction: dir }); }
 
-  function moveGuest(sec, gid, giid, dir) {
-    const group = findGroup(sec, gid);
-    if (!group) return;
-    const arr = group.guests;
-    const i = arr.findIndex(g => g.id === giid);
-    if (i < 0) return;
-    const j = i + dir;
-    if (j < 0 || j >= arr.length) return;
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-    save();
-    sec === 'sposi' ? renderSposi() : renderSection(sec);
-  }
+  async function moveGuest(sec, gid, giid, dir) { await DS.command('guest.move', { group_id: gid, id: giid, direction: dir }); }
 
-  function deleteGroup(sec, gid) {
+  async function deleteGroup(sec, gid) {
     if (!confirm('Eliminare il gruppo e tutti i suoi invitati?')) return;
-    data[sec].groups = data[sec].groups.filter(g => g.id !== gid);
-    data[sec].groupOrder = data[sec].groupOrder.filter(id => id !== gid);
-    save();
-    renderSection(sec);
-    toast('Gruppo eliminato');
+    await DS.command('group.delete', { section: sec, id: gid });
   }
 
-  function renameGroup(sec, gid, el) {
-    const g = findGroup(sec, gid);
-    if (!g || g.type === 'sposi') return;
-    g.name = el.value.trim() || g.name;
-    save();
-    updateSummary();
-  }
+  async function renameGroup(sec, gid, el) { await DS.command('group.patch', { id: gid, values: { name: el.value.trim() } }); }
 
   function toggleGroupCollapse(sec, gid) {
     if (collapsedGroups.has(gid)) collapsedGroups.delete(gid);
@@ -536,23 +464,12 @@ export function mount(root) {
     renderSection(sec);
   }
 
-  function setCapofamiglia(sec, gid, giid) {
+  async function setCapofamiglia(sec, gid, giid) {
     const group = findGroup(sec, gid);
-    if (!group || group.type !== 'famiglia') return;
-    group.capofamiglia = (group.capofamiglia === giid) ? null : giid;
-    save();
-    renderSection(sec);
-    toast(group.capofamiglia ? '👑 Referente impostato' : 'Referente rimosso');
+    await DS.command('group.contact', { id: gid, guest_id: group.capofamiglia === giid ? null : giid });
   }
 
-  function setParentela(sec, gid, giid, val) {
-    const group = findGroup(sec, gid);
-    if (!group) return;
-    const guest = group.guests.find(g => g.id === giid);
-    if (!guest) return;
-    guest.parentela = val;
-    save();
-  }
+  async function setParentela(sec, gid, giid, val) { await DS.command('guest.patch', { id: giid, values: { parentela: val } }); }
 
   function groupMoveOptions(curSec, curGid) {
     let html = '<option value="">Sposta in…</option>';
@@ -570,21 +487,9 @@ export function mount(root) {
     return count ? html : null;
   }
 
-  function moveGuestToGroup(fromSec, fromGid, giid, target) {
+  async function moveGuestToGroup(fromSec, fromGid, giid, target) {
     if (!target) return;
-    const [toSec, toGid] = target.split(':');
-    const src = findGroup(fromSec, fromGid);
-    const dst = findGroup(toSec, toGid);
-    if (!src || !dst || src === dst) return;
-    const idx = src.guests.findIndex(g => g.id === giid);
-    if (idx < 0) return;
-    const [guest] = src.guests.splice(idx, 1);
-    if (src.capofamiglia === giid) src.capofamiglia = null;
-    guest.parentela = '';
-    dst.guests.push(guest);
-    save();
-    renderAll();
-    toast(guest.name + ' spostato/a in "' + dst.name + '"');
+    await DS.command('guest.transfer', { from_group: fromGid, to_group: target.split(':')[1], id: giid });
   }
 
   function focusGroupName(btn) {
@@ -602,19 +507,10 @@ export function mount(root) {
     btn.closest('.family-group').classList.toggle('expanded');
   }
 
-  function addGuest(sec) {
-    const nome = $('#input-nome-' + sec).value.trim();
-    if (!nome) { toast('Inserisci il nome dell\'invitato'); return; }
-    const tipo   = $('#input-tipo-' + sec).value;
-    const gid    = $('#input-gruppo-' + sec).value;
-    if (!gid) { toast('Crea prima un gruppo'); return; }
-    const guest  = { id: uid(), name: nome, tipo, status: 'da_invitare', formale: false, parentela: '', menu: '', celiaco: false, lattosio: false };
-    const group  = data[sec].groups.find(g => g.id === gid);
-    group.guests.push(guest);
-    save();
-    renderSection(sec);
-    closeAddForm(sec);
-    toast(nome + ' aggiunto/a');
+  async function addGuest(sec) {
+    const name = $('#input-nome-' + sec).value.trim();
+    const group_id = $('#input-gruppo-' + sec).value;
+    if (await DS.command('guest.create', { group_id, values: { name, tipo: $('#input-tipo-' + sec).value } })) closeAddForm(sec);
   }
 
   function toggleGroupAdd(sec, gid) {
@@ -626,138 +522,45 @@ export function mount(root) {
     const el = root.querySelector(`.family-group[data-gid="${gid}"] .group-add-name`);
     if (el) el.focus();
   }
-  function addGuestToGroup(sec, gid) {
+  async function addGuestToGroup(sec, gid) {
     const wrap = root.querySelector(`.family-group[data-gid="${gid}"] .group-add`);
     if (!wrap) return;
-    const nameEl = wrap.querySelector('.group-add-name');
-    const tipoEl = wrap.querySelector('.group-add-tipo');
-    const nome = nameEl.value.trim();
-    if (!nome) { toast('Inserisci il nome dell\'invitato'); nameEl.focus(); return; }
-    const group = data[sec].groups.find(g => g.id === gid);
-    if (!group) return;
-    group.guests.push({ id: uid(), name: nome, tipo: tipoEl.value, status: 'da_invitare', formale: false, parentela: '', menu: '', celiaco: false, lattosio: false });
-    save();
-    addOpenGid = gid;
-    renderSection(sec);
-    focusGroupAdd(gid);
-    toast(nome + ' aggiunto/a a "' + group.name + '"');
+    const values = { name: wrap.querySelector('.group-add-name').value.trim(), tipo: wrap.querySelector('.group-add-tipo').value };
+    if (await DS.command('guest.create', { group_id: gid, values })) { addOpenGid = gid; renderSection(sec); focusGroupAdd(gid); }
   }
 
-  function addSpouse() {
-    const inp = $('#input-sposi-nome');
-    const nome = inp.value.trim();
-    if (!nome) { toast('Inserisci il nome dello sposo/a'); return; }
-    data.sposi.guests.push({ id: uid(), name: nome, tipo: 'adulto', status: 'confermato', formale: false, parentela: '', menu: '', celiaco: false, lattosio: false });
-    save();
-    renderSposi();
-    inp.value = '';
-    inp.focus();
-    toast(nome + ' aggiunto/a agli sposi');
+  async function addSpouse() {
+    const name = $('#input-sposi-nome').value.trim();
+    if (await DS.command('guest.create', { group_id: 'sposi', values: { name } })) $('#input-sposi-nome').value = '';
   }
 
-  function deleteGuest(sec, gid, giid) {
-    const group = findGroup(sec, gid);
-    if (!group) return;
-    group.guests = group.guests.filter(g => g.id !== giid);
-    if (group.capofamiglia === giid) group.capofamiglia = null;
-    save();
-    sec === 'sposi' ? renderSposi() : renderSection(sec);
+  async function deleteGuest(sec, gid, giid) { await DS.command('guest.delete', { group_id: gid, id: giid }); }
+
+  async function updateGuestStatus(sec, gid, giid, val) { await DS.command('guest.patch', { id: giid, values: { status: val } }); }
+
+  async function updateGuestName(sec, gid, giid, val) { await DS.command('guest.patch', { id: giid, values: { name: val } }); }
+
+  async function updateGuestTipo(sec, gid, giid, val) { await DS.command('guest.patch', { id: giid, values: { tipo: val } }); }
+
+  async function updateGuestMenu(sec, gid, giid, val) { await DS.command('guest.patch', { id: giid, values: { menu: val } }); }
+
+  async function toggleCeliaco(sec, gid, giid) {
+    const guest = findGroup(sec, gid).guests.find(g => g.id === giid);
+    await DS.command('guest.patch', { id: giid, values: { celiaco: !guest.celiaco } });
   }
 
-  function updateGuestStatus(sec, gid, giid, val) {
-    const group = findGroup(sec, gid);
-    const guest = group.guests.find(g => g.id === giid);
-
-    if (val === 'confermato' && guest.formale) {
-      guest.formale = false;
-      guest.status  = val;
-      save();
-      sec === 'sposi' ? renderSposi() : renderSection(sec);
-      toast('⚠ ' + guest.name + ' ha confermato: rimosso da "Formali", ora incluso nei conteggi');
-      return;
-    }
-
-    guest.status = val;
-    const sel = root.querySelector(`[data-giid="${giid}"]`);
-    if (sel) {
-      applyStatusStyle(sel, val);
-      const item = sel.closest('.guest-item');
-      const dot  = item && item.querySelector('.status-dot');
-      if (dot) dot.className = 'status-dot status-' + val;
-    }
-    save();
-    updateSummary();
-  }
-
-  function updateGuestName(sec, gid, giid, val) {
-    const group = findGroup(sec, gid);
-    const guest = group.guests.find(g => g.id === giid);
-    guest.name = val.trim() || guest.name;
-    save();
-    if (group.type === 'famiglia' && group.capofamiglia === giid) renderSection(sec);
-  }
-
-  function updateGuestTipo(sec, gid, giid, val) {
-    const group = findGroup(sec, gid);
-    const guest = group && group.guests.find(g => g.id === giid);
-    if (!guest) return;
-    guest.tipo = val;
-    const sel = root.querySelector(`.guest-item[data-giid="${giid}"] .tipo-select`);
-    if (sel) sel.className = 'tipo-select tipo-' + val;
-    save();
-    updateSummary();
-  }
-
-  function updateGuestMenu(sec, gid, giid, val) {
-    const group = findGroup(sec, gid);
-    const guest = group && group.guests.find(g => g.id === giid);
-    if (!guest) return;
-    guest.menu = val;
-    const sel = root.querySelector(`.guest-item[data-giid="${giid}"] .menu-select`);
-    if (sel) sel.className = 'menu-select menu-' + (val || 'none');
-    save();
-    updateSummary();
-  }
-
-  function toggleCeliaco(sec, gid, giid, btn) {
-    const group = findGroup(sec, gid);
-    const guest = group && group.guests.find(g => g.id === giid);
-    if (!guest) return;
-    guest.celiaco = !guest.celiaco;
-    btn.classList.toggle('active', guest.celiaco);
-    save();
-    updateSummary();
-  }
-
-  function toggleLattosio(sec, gid, giid, btn) {
-    const group = findGroup(sec, gid);
-    const guest = group && group.guests.find(g => g.id === giid);
-    if (!guest) return;
-    guest.lattosio = !guest.lattosio;
-    btn.classList.toggle('active', guest.lattosio);
-    save();
-    updateSummary();
+  async function toggleLattosio(sec, gid, giid) {
+    const guest = findGroup(sec, gid).guests.find(g => g.id === giid);
+    await DS.command('guest.patch', { id: giid, values: { lattosio: !guest.lattosio } });
   }
 
   function applyStatusStyle(sel, status) {
     sel.className = 'status-select status-' + status;
   }
 
-  function toggleFormale(sec, gid, giid, btn) {
-    const group = findGroup(sec, gid);
-    const guest = group.guests.find(g => g.id === giid);
-
-    if (!guest.formale && guest.status === 'confermato') {
-      toast('Non puoi marcare come formale un invitato già confermato');
-      return;
-    }
-
-    guest.formale = !guest.formale;
-    btn.classList.toggle('active', guest.formale);
-    btn.textContent = guest.formale ? '⚠ Formale' : 'Formale';
-    btn.closest('.guest-item').classList.toggle('formale', guest.formale);
-    save();
-    updateSummary();
+  async function toggleFormale(sec, gid, giid) {
+    const guest = findGroup(sec, gid).guests.find(g => g.id === giid);
+    await DS.command('guest.patch', { id: giid, values: { formale: !guest.formale } });
   }
 
   function allGuests() {
@@ -1055,6 +858,7 @@ export function mount(root) {
     const container = $('#groups-' + sec);
     const groups = container.querySelectorAll('.family-group');
     let dragging = null;
+    let expected;
 
     groups.forEach(el => {
       const handle = el.querySelector('.drag-handle');
@@ -1064,6 +868,7 @@ export function mount(root) {
       }
 
       el.addEventListener('dragstart', e => {
+        expected = DS.revisions();
         dragging = el;
         setTimeout(() => el.classList.add('dragging'), 0);
         e.dataTransfer.effectAllowed = 'move';
@@ -1074,8 +879,7 @@ export function mount(root) {
         container.querySelectorAll('.family-group').forEach(g => g.classList.remove('drop-target'));
         dragging = null;
         const newOrder = [...container.querySelectorAll('.family-group')].map(g => g.dataset.gid);
-        data[sec].groupOrder = newOrder;
-        save();
+        DS.command('group.order', { section: sec, ids: newOrder }, expected);
       });
       el.addEventListener('dragover', e => {
         e.preventDefault();
@@ -1093,6 +897,7 @@ export function mount(root) {
 
   function enableGuestDrag(ul, sec, gid) {
     let dragging = null;
+    let expected;
 
     ul.querySelectorAll('.guest-item').forEach(li => {
       const handle = li.querySelector('.guest-drag');
@@ -1102,6 +907,7 @@ export function mount(root) {
       }
 
       li.addEventListener('dragstart', e => {
+        expected = DS.revisions();
         dragging = li;
         setTimeout(() => li.classList.add('dragging'), 0);
         e.dataTransfer.effectAllowed = 'move';
@@ -1114,8 +920,7 @@ export function mount(root) {
         dragging = null;
         const group = findGroup(sec, gid);
         const newOrder = [...ul.querySelectorAll('.guest-item')].map(i => i.dataset.giid);
-        group.guests = newOrder.map(id => group.guests.find(g => g.id === id)).filter(Boolean);
-        save();
+        DS.command('guest.order', { group_id: gid, ids: newOrder }, expected);
       });
       li.addEventListener('dragover', e => {
         e.preventDefault(); e.stopPropagation();
@@ -1146,7 +951,7 @@ export function mount(root) {
 
   // Prezzi menù: salvataggio live (oninput) come nella pagina originale.
   ['#p-adulto','#p-adulto-carne','#p-adulto-pesce','#p-adulto-vegetariano','#p-adulto-vegano','#p-bambino','#p-neonato']
-    .forEach(sel => $(sel).addEventListener('input', saveAndRefresh));
+    .forEach(sel => $(sel).addEventListener('change', saveAndRefresh));
 
   load();
   loadPriceInputs();

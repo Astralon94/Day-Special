@@ -100,8 +100,9 @@ export function mount(root) {
 
   let prog = { data: '', eventi: [], eventOrder: [] };
   let editId = null;
+  let editExpected = null;
 
-  function save() { DS.set('ds_programma', prog); }
+
   function load() {
     const d = DS.get('ds_programma');
     if (d) prog = d;
@@ -112,10 +113,7 @@ export function mount(root) {
       updateDataDisplay();
     }
   }
-  function saveData() {
-    prog.data = $('#input-data').value;
-    updateDataDisplay(); save();
-  }
+  async function saveData() { await DS.command('event.date', { value: $('#input-data').value }); }
   function updateDataDisplay() {
     const v = prog.data;
     if (!v) { $('#data-display').textContent = ''; return; }
@@ -128,12 +126,10 @@ export function mount(root) {
     return prog.eventOrder.map(id => prog.eventi.find(e => e.id === id)).filter(Boolean);
   }
 
-  function sortByTime() {
-    prog.eventOrder = [...prog.eventi].sort((a,b) => a.ora.localeCompare(b.ora)).map(e => e.id);
-    save(); renderTimeline(); toast('Eventi ordinati per orario');
-  }
+  async function sortByTime() { await DS.command('event.sort'); }
 
   function openForm(edata) {
+    editExpected = DS.revisions();
     editId = edata ? edata.id : null;
     $('#form-title').textContent = editId ? 'Modifica evento' : 'Nuovo evento';
     $('#f-ora').value        = edata?.ora       || '';
@@ -148,44 +144,29 @@ export function mount(root) {
   function editEvento(id) { openForm(prog.eventi.find(e => e.id === id)); }
   function closeForm() { $('#add-form').classList.remove('open'); editId = null; }
 
-  function saveEvento() {
+  async function saveEvento() {
     const ora    = $('#f-ora').value;
     const titolo = $('#f-titolo').value.trim();
     if (!ora || !titolo) { toast('Inserisci orario e titolo'); return; }
     const wasEdit = !!editId;
     const obj = {
-      id:        editId || uid(),
+      id:        editId,
       ora, titolo,
       categoria: $('#f-categoria').value,
       luogo:     $('#f-luogo').value.trim(),
       durata:    parseInt($('#f-durata').value) || 0,
       note:      $('#f-note').value.trim()
     };
-    if (wasEdit) {
-      const i = prog.eventi.findIndex(e => e.id === editId);
-      if (i >= 0) prog.eventi[i] = obj;
-    } else {
-      prog.eventi.push(obj);
-      prog.eventOrder.push(obj.id);
-    }
-    save(); closeForm(); renderTimeline(); toast(wasEdit ? 'Evento aggiornato' : 'Evento aggiunto');
+    const { id, ...values } = obj;
+    if (!await DS.command('event.save', { id: editId, values }, editExpected)) return;
+    closeForm(); toast(wasEdit ? 'Modifica salvata' : 'Elemento aggiunto');
   }
 
-  function moveEvento(id, dir) {
-    const order = prog.eventOrder;
-    const i = order.indexOf(id);
-    if (i < 0) return;
-    const j = i + dir;
-    if (j < 0 || j >= order.length) return;
-    [order[i], order[j]] = [order[j], order[i]];
-    save(); renderTimeline();
-  }
+  async function moveEvento(id, dir) { await DS.command('event.move', { id, direction: dir }); }
 
-  function deleteEvento(id) {
-    if (!confirm('Eliminare questo evento?')) return;
-    prog.eventi     = prog.eventi.filter(e => e.id !== id);
-    prog.eventOrder = prog.eventOrder.filter(i => i !== id);
-    save(); renderTimeline(); toast('Evento eliminato');
+  async function deleteEvento(id) {
+    if (!confirm('Eliminare questo elemento?')) return;
+    if (await DS.command('event.delete', { id })) toast('Elemento eliminato');
   }
 
   function renderTimeline() {
@@ -238,17 +219,14 @@ export function mount(root) {
     return row;
   }
 
-  function updateField(id, field, val) {
-    const e = prog.eventi.find(e => e.id === id);
-    if (!e || !val.trim()) return;
-    e[field] = val.trim();
-    save();
-  }
+  async function updateField(id, field, val) { await DS.command('event.save', { id, values: { [field]: val.trim() } }); }
 
   function enableDrag(tl) {
     let dragging = null;
+    let expected;
     tl.querySelectorAll('.event-row').forEach(row => {
       row.addEventListener('dragstart', e => {
+        expected = DS.revisions();
         dragging = row;
         setTimeout(() => row.classList.add('dragging'), 0);
         e.dataTransfer.effectAllowed = 'move';
@@ -257,8 +235,7 @@ export function mount(root) {
         row.classList.remove('dragging');
         tl.querySelectorAll('.event-row').forEach(r => r.classList.remove('drop-target'));
         dragging = null;
-        prog.eventOrder = [...tl.querySelectorAll('.event-row')].map(r => r.dataset.eid);
-        save();
+        DS.command('event.order', { ids: [...tl.querySelectorAll('.event-row')].map(r => r.dataset.eid) }, expected);
       });
       row.addEventListener('dragover', e => {
         e.preventDefault();

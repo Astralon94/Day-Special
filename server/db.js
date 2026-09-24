@@ -12,16 +12,11 @@ const onDisk = DB_PATH !== ':memory:';
 if (onDisk) mkdirSync(DATA_DIR, { recursive: true });
 
 export const db = new DatabaseSync(DB_PATH);
-db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;');
+db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000; PRAGMA synchronous = FULL;');
 
-// Modello key-value: ogni riga è un documento JSON opaco (ds_invitati, ds_checklist, ...).
-// Niente collezioni relazionali: la struttura interna dei documenti è affare del client
-// (merge a 3 vie in src/state/storage.js), il server la tratta come blob.
-// `rev` è un contatore monotòno per chiave, incrementato dal server ad ogni
-// scrittura: è il segnale usato per il controllo delle modifiche concorrenti
-// (di chi è la versione più recente) — più robusto di un confronto sugli
-// orologi dei singoli dispositivi. La revisione attesa protegge le scritture;
-// i conflitti 409 vengono fusi automaticamente dal client.
+// I documenti storici restano nella stessa tabella: nessuna migrazione distruttiva.
+// Il servizio di dominio interpreta e valida i dati e aggiorna tutte le chiavi
+// coinvolte in una sola transazione con ricevuta idempotente.
 db.exec(`
   CREATE TABLE IF NOT EXISTS documents (
     key        TEXT PRIMARY KEY,

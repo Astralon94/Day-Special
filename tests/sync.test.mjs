@@ -2,120 +2,150 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-
-const key = 'ds_checklist';
-const value = (...ids) => ({ items: ids.map(id => ({ id })) });
-const plain = x => JSON.parse(JSON.stringify(x));
-
-// Esegue i moduli reali con browser/rete/orologio controllati. Le sole funzioni
-// private esposte servono a riprodurre interleaving senza attese temporali fragili.
-function client(initial = value(), rev = 1) {
-  const data = new Map(), listeners = {}, timers = new Map(), requests = [];
-  let serial = 0;
+const key = 'ds_budget';
+const snapshot = (total = 0, rev = 1) => ({
+  protocol: 2,
+  documents: { [key]: { value: { totale: total, voci: [] }, rev } },
+  computed: { cateringCost: 0 },
+});
+function client(cached = null) {
+  const data = new Map(cached ? [['ds_server_cache_v2', JSON.stringify(cached)]] : []),
+    events = [],
+    requests = [],
+    timers = new Map();
+  let seq = 0;
+  data.set('ds_budget', '{"totale":9999}');
+  data.set('ds_base', '{"originale":true}');
   const c = vm.createContext({
-    console: { warn() {} }, DOC_KEYS: [key], App: { toast() {} },
-    localStorage: { getItem: k => data.get(k) ?? null, setItem: (k, v) => data.set(k, v), removeItem: k => data.delete(k) },
-    window: { addEventListener: (k, f) => (listeners[k] ??= []).push(f), dispatchEvent: e => (listeners[e.type] || []).forEach(f => f(e)) },
-    CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
-    document: { getElementById: () => null }, navigator: { onLine: true },
-    setTimeout: (fn, ms) => { timers.set(++serial, { fn, ms }); return serial; }, clearTimeout: id => timers.delete(id),
-    fetch: (url, opts) => new Promise((resolve, reject) => requests.push({ url, opts, resolve, reject })),
-    EventSource: class { constructor() { c.stream = this; } addEventListener() {} close() {} },
+    DOC_KEYS: [key],
+    App: { toast() {} },
+    console,
+    location: { hash: '#/budget' },
+    navigator: { onLine: true },
+    crypto: { randomUUID: () => `request_${++seq}` },
+    AbortController,
+    localStorage: { getItem: (k) => data.get(k) ?? null, setItem: (k, v) => data.set(k, v) },
+    window: { dispatchEvent: (e) => events.push(e) },
+    CustomEvent: class {
+      constructor(type, init) {
+        this.type = type;
+        this.detail = init?.detail;
+      }
+    },
+    setTimeout: (fn, ms) => {
+      timers.set(++seq, { fn, ms });
+      return seq;
+    },
+    clearTimeout: (i) => timers.delete(i),
+    fetch: (url, options) =>
+      new Promise((resolve, reject) => {
+        requests.push({ url, options, resolve, reject });
+        options.signal.addEventListener('abort', () => reject(new Error('timeout')));
+      }),
   });
-  for (const name of ['storage', 'sync']) {
-    let source = readFileSync(new URL('../src/state/' + name + '.js', import.meta.url), 'utf8')
-      .replace(/^import .*;$/mg, '').replace('export const ', 'const ');
-    if (name === 'sync') source = source.replace('return { init, onViewMounted,', 'return { pushKey, reconcileRemote, startSync, queuePush, init, onViewMounted,');
-    vm.runInContext(source, c);
-  }
-  const DS = c.window.DS, S = c.window.Sync;
-  DS.set(key, initial); DS.setBase(key, initial); DS.setRev(key, rev);
-  c.window.addEventListener('ds:change', e => { if (!e.detail.remote) S.queuePush(e.detail.key); });
-  const reply = async (index, body, status = 200) => {
-    assert.ok(requests[index], 'Richiesta attesa ' + index);
-    requests[index].resolve({ ok: status >= 200 && status < 300, status, json: async () => body });
-    // Scarica le continuazioni async (fetch, json e finally).
-    for (let i = 0; i < 12; i++) await Promise.resolve();
+  vm.runInContext(
+    readFileSync(new URL('../src/state/storage.js', import.meta.url), 'utf8')
+      .replace(/^import .*;$/gm, '')
+      .replace('export const DS', 'const DS'),
+    c,
+  );
+  const tick = async () => {
+    for (let i = 0; i < 20; i++) await Promise.resolve();
   };
-  return { c, DS, S, requests, timers, reply };
+  const reply = async (index, body, status = 200) => {
+    assert.ok(requests[index], `richiesta ${index}`);
+    requests[index].resolve({ ok: status >= 200 && status < 300, status, json: async () => body });
+    await tick();
+  };
+  const connect = async () => {
+    const p = c.window.DS.refresh();
+    await reply(requests.length - 1, snapshot());
+    await p;
+  };
+  return { DS: c.window.DS, c, data, requests, events, timers, reply, connect, tick };
 }
-
-test('retry offline: conserva le aggiunte remote prima della PUT', async () => {
-  const a = client(); a.DS.set(key, value('locale'));
-  const first = a.S.pushKey(key); a.requests[0].reject(new Error('offline')); await first;
-  const retry = a.S.pushKey(key);
-  await a.reply(1, { value: value('remoto'), rev: 2 });
-  const sent = JSON.parse(a.requests[2].opts.body);
-  assert.equal(sent.expected_rev, 2);
-  assert.deepEqual(sent.value.items.map(x => x.id).sort(), ['locale', 'remoto']);
-  await a.reply(2, { rev: 3 }); await retry;
-  assert.equal(a.S.pending, 0);
+test('il bootstrap non usa o importa documenti legacy e offline rifiuta le modifiche', async () => {
+  const a = client();
+  assert.equal(a.DS.get(key), null);
+  assert.equal(await a.DS.command('budget.total', { value: 10 }), null);
+  assert.equal(a.requests.length, 0);
+  await a.connect();
+  assert.equal(a.DS.get(key).totale, 0);
+  assert.equal(a.data.get('ds_budget'), '{"totale":9999}');
+  assert.equal(a.data.get('ds_base'), '{"originale":true}');
 });
-
-test('una sola PUT in volo e nuova modifica conservata fino alla conferma', async () => {
-  const a = client(); a.DS.set(key, value('a'));
-  const first = a.S.pushKey(key); await a.reply(0, { value: value(), rev: 1 });
-  a.DS.set(key, value('a', 'b')); await a.S.pushKey(key);
-  assert.equal(a.requests.length, 2);
-  await a.reply(1, { rev: 2 }); await first;
-  assert.equal(a.S.pending, 1); assert.equal(a.S.status, 'syncing');
-  const next = a.S.pushKey(key); await a.reply(2, { value: value('a'), rev: 2 });
-  assert.deepEqual(JSON.parse(a.requests[3].opts.body).value, value('a', 'b'));
-  await a.reply(3, { rev: 3 }); await next;
-  assert.equal(a.S.pending, 0); assert.equal(a.S.status, 'synced');
+test('cache confermata consultabile offline, quota piena non compromette lo snapshot', async () => {
+  const a = client(snapshot(20));
+  assert.equal(a.DS.get(key).totale, 20);
+  assert.equal(a.DS.writable, false);
+  a.c.localStorage.setItem = () => {
+    throw new Error('QuotaExceededError');
+  };
+  await a.connect();
+  assert.equal(a.DS.writable, true);
+  assert.equal(a.DS.get(key).totale, 0);
 });
-
-test('conflitto 409 riconciliato e ritentato senza sovrascrivere il remoto', async () => {
-  const a = client(); a.DS.set(key, value('a'));
-  const first = a.S.pushKey(key); await a.reply(0, { value: value(), rev: 1 });
-  await a.reply(1, { current: { value: value('b'), rev: 2 } }, 409); await first;
-  assert.equal(a.S.pending, 1);
-  const retry = a.S.pushKey(key); await a.reply(2, { value: value('b'), rev: 2 });
-  assert.deepEqual(JSON.parse(a.requests[3].opts.body).value.items.map(x => x.id).sort(), ['a', 'b']);
-  await a.reply(3, { rev: 3 }); await retry;
-  assert.equal(a.S.pending, 0);
+test('salvato solo dopo commit, una richiesta alla volta e viste notificate', async () => {
+  const a = client();
+  await a.connect();
+  const saving = a.DS.command('budget.total', { value: 20 });
+  assert.equal(a.DS.status, 'saving');
+  assert.equal(a.DS.get(key).totale, 0);
+  assert.equal(await a.DS.command('budget.total', { value: 30 }), null);
+  await a.reply(1, { result: {}, state: snapshot(20, 2) });
+  await a.reply(2, snapshot(20, 2));
+  await saving;
+  assert.equal(a.DS.status, 'synced');
+  assert.equal(a.DS.get(key).totale, 20);
+  assert.ok(a.events.some((e) => e.type === 'ds:change' && e.detail.remote));
 });
-
-test('snapshot superati non fanno regredire contenuto, base e revisione', () => {
-  const a = client(value('a'), 3);
-  a.S.reconcileRemote(key, value(), 2);
-  assert.deepEqual(plain(a.DS.get(key)), value('a'));
-  assert.deepEqual(plain(a.DS.getBase(key)), value('a'));
-  assert.equal(a.DS.getRev(key), 3);
+test('risposta persa: stesso ID e payload, niente nuove modifiche fino alla ricevuta', async () => {
+  const a = client();
+  await a.connect();
+  const saving = a.DS.command('budget.total', { value: 20 });
+  a.requests[1].reject(new Error('Risposta persa'));
+  await saving;
+  assert.equal(a.DS.status, 'uncertain');
+  assert.equal(await a.DS.command('budget.total', { value: 30 }), null);
+  const recovering = a.DS.recover();
+  assert.equal(a.requests[2].options.body, a.requests[1].options.body);
+  await a.reply(2, { result: {}, state: snapshot(20, 2), replayed: true });
+  await a.reply(3, snapshot(20, 2));
+  await recovering;
+  assert.equal(a.DS.status, 'synced');
 });
-
-test('SSE durante una PUT viene applicato dopo la risposta senza regressione', async () => {
-  const a = client(); a.DS.set(key, value('a'));
-  const first = a.S.pushKey(key); await a.reply(0, { value: value(), rev: 1 });
-  a.S.reconcileRemote(key, value('a', 'b'), 3);
-  await a.reply(1, { rev: 2 }); await first;
-  assert.deepEqual(plain(a.DS.get(key)), value('a', 'b'));
-  assert.equal(a.DS.getRev(key), 3);
+test('timeout della richiesta libera il client e consente recupero idempotente', async () => {
+  const a = client();
+  await a.connect();
+  const saving = a.DS.command('budget.total', { value: 20 });
+  for (const { fn } of [...a.timers.values()]) fn();
+  await saving;
+  assert.equal(a.DS.status, 'uncertain');
+  const recovery = a.DS.recover();
+  await a.reply(2, { result: {}, state: snapshot(20, 2) });
+  await a.reply(3, snapshot(20, 2));
+  await recovery;
+  assert.equal(a.DS.writable, true);
 });
-
-test('la prima apertura SSE recupera le modifiche successive al pull', async () => {
-  const a = client(); const starting = a.S.startSync();
-  await a.reply(0, { [key]: { value: value(), rev: 1 } }); await starting;
-  a.c.stream.onopen();
-  assert.equal(a.requests.length, 2);
-  await a.reply(1, { [key]: { value: value('intervallo'), rev: 2 } });
-  assert.deepEqual(plain(a.DS.get(key)), value('intervallo'));
+test('conflitto non ripetuto automaticamente e stato aggiornato dal server', async () => {
+  const a = client();
+  await a.connect();
+  const saving = a.DS.command('budget.total', { value: 20 });
+  await a.reply(1, { error: 'Conflitto' }, 409);
+  await a.reply(2, snapshot(40, 2));
+  await saving;
+  assert.equal(a.DS.get(key).totale, 40);
+  assert.equal(a.requests.filter((x) => x.options.method === 'POST').length, 1);
 });
-
-test('risposta PUT persa: il retry riconosce il documento già salvato', async () => {
-  const a = client(); a.DS.set(key, value('a'));
-  const first = a.S.pushKey(key); await a.reply(0, { value: value(), rev: 1 });
-  a.requests[1].reject(new Error('Risposta persa dopo il commit')); await first;
-  const retry = a.S.pushKey(key); await a.reply(2, { value: value('a'), rev: 2 }); await retry;
-  assert.equal(a.requests.length, 3); // Nessuna seconda PUT necessaria.
-  assert.equal(a.S.pending, 0); assert.equal(a.S.status, 'synced');
-});
-
-test('la base remota avanza anche con modifiche locali ancora da salvare', () => {
-  const a = client(); a.DS.set(key, value('locale'));
-  a.S.reconcileRemote(key, value('remoto'), 2);
-  a.S.reconcileRemote(key, value(), 3); // L'altro dispositivo cancella la sua aggiunta.
-  assert.deepEqual(plain(a.DS.get(key)), value('locale'));
-  assert.deepEqual(plain(a.DS.getBase(key)), value());
-  assert.equal(a.S.pending, 1);
+test('GET precedente al comando non fa regredire la conferma', async () => {
+  const a = client();
+  await a.connect();
+  const old = a.DS.refresh();
+  const saving = a.DS.command('budget.total', { value: 20 });
+  await a.reply(2, { result: {}, state: snapshot(20, 2) });
+  await a.reply(1, snapshot(0, 1));
+  await old;
+  await a.reply(3, snapshot(20, 2));
+  await saving;
+  assert.equal(a.DS.get(key).totale, 20);
 });

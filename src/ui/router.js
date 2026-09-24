@@ -1,4 +1,5 @@
 import { App } from './app.js';
+import { DS } from '../state/storage.js';
 import { Sync } from '../state/sync.js';
 import * as home from './views/home.js';
 import * as invitati from './views/invitati.js';
@@ -24,6 +25,10 @@ export function mountRoute() {
   if (currentUnmount) { try { currentUnmount(); } catch (e) { console.error(e); } currentUnmount = null; }
   const view = VIEWS[currentRoute()] || home;
   const root = document.getElementById('app');
+  if (!DS.ready) {
+    root.innerHTML = '<div class="container"><h1>Day Special</h1><p>Caricamento dal server. Le modifiche saranno disponibili dopo la connessione.</p></div>';
+    return;
+  }
   root.innerHTML = view.html;
   document.title = view.title || 'Day Special';
   try {
@@ -62,5 +67,6 @@ function errorHtml(e) {
 
 export function startRouter() {
   window.addEventListener('hashchange', mountRoute);
+  window.addEventListener('ds:ready', () => { if (!document.querySelector('header')) mountRoute(); });
   mountRoute();
 }
